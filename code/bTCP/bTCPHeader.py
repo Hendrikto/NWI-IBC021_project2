@@ -15,9 +15,9 @@ class BTCPHeader(object):
             id: int,
             syn: int,
             ack: int,
+            raw_flags: int,
             window_size: int,
             data_length: int,
-            raw_flags: int = 0,
     ):
         self.id = id
         self.syn_number = syn
