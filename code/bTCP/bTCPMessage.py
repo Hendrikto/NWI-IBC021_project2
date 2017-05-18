@@ -25,7 +25,7 @@ class BTCPMessage(object):
         return (
             "bTCP Message:\n\t" +
             header +
-            "\npayload: " +
+            "\n\tpayload: " +
             str(self.payload)
         )
 
