@@ -27,7 +27,9 @@ class BTCPHeader(object):
         self._flags = raw_flags
 
     def __str__(self):
-        return "bTCP Header:\n" + pformat(self.__dict__)
+        return "bTCP Header:\n\t" + pformat(self.__dict__).replace(
+            "\n", "\n\t"
+        )
 
     @property
     def syn(self) -> bool:
