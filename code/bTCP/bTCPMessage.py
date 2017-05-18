@@ -20,6 +20,6 @@ class BTCPMessage(object):
 
     def to_bytes(self) -> bytes:
         header_bytes = self.header.to_bytes()
-        return header_bytes + struct.pack("L", zlib.crc32(
+        return header_bytes + struct.pack("!L", zlib.crc32(
             header_bytes + self.payload
         )) + self.payload.ljust(BTCPMessage.payload_size, b"\0")
