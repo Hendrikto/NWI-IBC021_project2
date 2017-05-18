@@ -11,6 +11,14 @@ class BTCPHeaderTest(unittest.TestCase):
             b"\x00\x00\x00\x01\x00\x02\x00\x03\x04\x05\x00\x06"
         )
 
+    def test_deserialization(self):
+        self.assertEqual(
+            BTCPHeader.from_bytes(
+                b"\x00\x00\x00\x01\x00\x02\x00\x03\x04\x05\x00\x06"
+            ),
+            BTCPHeader(1, 2, 3, 4, 5, 6)
+        )
+
 
 class BTCPMessageTest(unittest.TestCase):
     def test_padding(self):
