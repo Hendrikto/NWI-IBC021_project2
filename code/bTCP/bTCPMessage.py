@@ -18,7 +18,7 @@ class BTCPMessage(object):
         self.header = header
         self.payload = payload
 
-    def to_bytes(self):
+    def to_bytes(self) -> bytes:
         header_bytes = self.header.to_bytes()
         return header_bytes + struct.pack("L", zlib.crc32(
             header_bytes + self.payload

@@ -34,7 +34,7 @@ class BTCPHeader(object):
         return bool(self._flags & BTCPHeader.syn_mask)
 
     @syn.setter
-    def syn(self, on):
+    def syn(self, on: bool) -> None:
         if on:
             self._flags |= BTCPHeader.syn_mask
         else:
@@ -45,7 +45,7 @@ class BTCPHeader(object):
         return bool(self._flags & BTCPHeader.ack_mask)
 
     @ack.setter
-    def ack(self, on):
+    def ack(self, on: bool) -> None:
         if on:
             self._flags |= BTCPHeader.ack_mask
         else:
@@ -56,13 +56,13 @@ class BTCPHeader(object):
         return bool(self._flags & BTCPHeader.fin_mask)
 
     @fin.setter
-    def fin(self, on):
+    def fin(self, on: bool) -> None:
         if on:
             self._flags |= BTCPHeader.fin_mask
         else:
             self._flags &= ~(BTCPHeader.fin_mask)
 
-    def to_bytes(self):
+    def to_bytes(self) -> bytes:
         return struct.pack(
             "!LHHBBH",
             self.id,
