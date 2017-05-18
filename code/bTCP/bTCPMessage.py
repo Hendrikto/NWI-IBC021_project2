@@ -18,6 +18,15 @@ class BTCPMessage(object):
         self.header = header
         self.payload = payload
 
+    def __str__(self):
+        header = str(self.header).replace("\t", "\t\t")
+        return (
+            "bTCP Message:\n\t" +
+            header +
+            "\npayload: " +
+            str(self.payload)
+        )
+
     def to_bytes(self) -> bytes:
         header_bytes = self.header.to_bytes()
         return header_bytes + struct.pack("!L", zlib.crc32(
