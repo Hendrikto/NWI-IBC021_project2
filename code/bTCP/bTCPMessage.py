@@ -15,6 +15,8 @@ class BTCPMessage(object):
             header: BTCPHeader,
             payload: bytes,
     ):
+        if len(payload) > 1000:
+            raise AttributeError("Payload is too big.")
         self.header = header
         self.payload = payload
 
