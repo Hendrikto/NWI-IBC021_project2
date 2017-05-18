@@ -1,5 +1,6 @@
 # author: Hendrik Werner s4549775
 # author: Constantin Blach s4329872
+import bTCP.bTCPMessage
 import struct
 
 from pprint import pformat
@@ -35,6 +36,16 @@ class BTCPHeader(object):
         return "bTCP Header:\n\t" + pformat(self.__dict__).replace(
             "\n", "\n\t"
         )
+
+    @property
+    def data_length(self):
+        return self._data_length
+
+    @data_length.setter
+    def data_length(self, length):
+        if length > bTCP.bTCPMessage.BTCPMessage.payload_size:
+            raise AttributeError("The payload cannot be this big.")
+        self._data_length = length
 
     @property
     def syn(self) -> bool:
