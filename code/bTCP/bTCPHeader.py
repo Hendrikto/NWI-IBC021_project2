@@ -2,7 +2,6 @@
 # author: Constantin Blach s4329872
 import struct
 
-import zlib
 from pprint import pformat
 
 
@@ -64,7 +63,7 @@ class BTCPHeader(object):
             self._flags &= ~(BTCPHeader.fin_mask)
 
     def to_bytes(self):
-        data = struct.pack(
+        return struct.pack(
             "!LHHBBH",
             self.id,
             self.syn_number,
@@ -73,4 +72,3 @@ class BTCPHeader(object):
             self.window_size,
             self.data_length,
         )
-        return data + struct.pack("L", zlib.crc32(data))
