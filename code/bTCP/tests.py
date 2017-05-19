@@ -1,5 +1,6 @@
 import unittest
 
+from bTCP.exceptions import ChecksumMismatch
 from bTCP.message import BTCPMessage
 from bTCP.header import BTCPHeader
 
@@ -33,6 +34,18 @@ class BTCPMessageTest(unittest.TestCase):
         self.assertEqual(
             message,
             BTCPMessage.from_bytes(message.to_bytes())
+        )
+
+    def test_checksum_bad_header(self):
+        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5, 6), b"payload")
+        message_bytes = message.to_bytes()
+        message_bad_header = (
+            BTCPHeader(1, 2, 3, 4, 5, 7).to_bytes() +
+            message_bytes[12:]
+        )
+        self.assertRaises(
+            ChecksumMismatch,
+            BTCPMessage.from_bytes, message_bad_header
         )
 
 
