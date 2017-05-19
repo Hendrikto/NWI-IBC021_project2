@@ -1,3 +1,4 @@
+import struct
 import unittest
 
 from bTCP.exceptions import ChecksumMismatch
@@ -46,6 +47,19 @@ class BTCPMessageTest(unittest.TestCase):
         self.assertRaises(
             ChecksumMismatch,
             BTCPMessage.from_bytes, message_bad_header
+        )
+
+    def test_checksum_bad_checksum(self):
+        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5, 6), b"payload")
+        message_bytes = message.to_bytes()
+        message_bad_checksum = (
+            message_bytes[:12] +
+            struct.pack("!L", 0) +
+            message_bytes[16:]
+        )
+        self.assertRaises(
+            ChecksumMismatch,
+            BTCPMessage.from_bytes, message_bad_checksum
         )
 
 
