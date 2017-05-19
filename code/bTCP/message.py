@@ -4,11 +4,22 @@ import struct
 
 import zlib
 
+from bTCP.exceptions import ChecksumMismatch
 from bTCP.header import BTCPHeader
 
 
 class BTCPMessage(object):
     payload_size = 1000
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        header = BTCPHeader.from_bytes(data[:12])
+        checksum = struct.unpack("!L", data[12:16])[0]
+        payload = data[16:16 + header.data_length + 1]
+        if checksum == zlib.crc32(data[:12] + payload):
+            return cls(header, payload)
+        else:
+            raise ChecksumMismatch()
 
     def __init__(
             self,
