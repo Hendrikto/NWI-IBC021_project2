@@ -40,6 +40,12 @@ class BTCPMessage(object):
             str(self.payload)
         )
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__) and
+            self.__dict__ == other.__dict__
+        )
+
     def to_bytes(self) -> bytes:
         header_bytes = self.header.to_bytes()
         return header_bytes + struct.pack("!L", zlib.crc32(
