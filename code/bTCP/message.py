@@ -4,7 +4,7 @@ import struct
 
 import zlib
 
-from bTCP.bTCPHeader import BTCPHeader
+from bTCP.header import BTCPHeader
 
 
 class BTCPMessage(object):

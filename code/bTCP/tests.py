@@ -1,7 +1,7 @@
 import unittest
 
-from bTCP.bTCPMessage import BTCPMessage
-from bTCP.bTCPHeader import BTCPHeader
+from bTCP.message import BTCPMessage
+from bTCP.header import BTCPHeader
 
 
 class BTCPHeaderTest(unittest.TestCase):

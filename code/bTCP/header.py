@@ -1,6 +1,6 @@
 # author: Hendrik Werner s4549775
 # author: Constantin Blach s4329872
-import bTCP.bTCPMessage
+import bTCP.message
 import struct
 
 from pprint import pformat
@@ -49,7 +49,7 @@ class BTCPHeader(object):
 
     @data_length.setter
     def data_length(self, length):
-        if length > bTCP.bTCPMessage.BTCPMessage.payload_size:
+        if length > bTCP.message.BTCPMessage.payload_size:
             raise AttributeError("The payload cannot be this big.")
         self._data_length = length
 
