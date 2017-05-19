@@ -62,6 +62,18 @@ class BTCPMessageTest(unittest.TestCase):
             BTCPMessage.from_bytes, message_bad_checksum
         )
 
+    def test_checksum_bad_payload(self):
+        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5, 6), b"payload")
+        message_bytes = message.to_bytes()
+        message_bad_payload = (
+            message_bytes[:16] +
+            b"different payload".ljust(BTCPMessage.payload_size, b"\0")
+        )
+        self.assertRaises(
+            ChecksumMismatch,
+            BTCPMessage.from_bytes, message_bad_payload
+        )
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
