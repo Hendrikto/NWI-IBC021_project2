@@ -27,6 +27,14 @@ class BTCPMessageTest(unittest.TestCase):
             len(BTCPMessage(header, b"short payload").to_bytes()), 1016
         )
 
+    def test_serialization_deserialization(self):
+        header = BTCPHeader(1, 2, 3, 4, 5, 6)
+        message = BTCPMessage(header, b"payload")
+        self.assertEqual(
+            message,
+            BTCPMessage.from_bytes(message.to_bytes())
+        )
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
