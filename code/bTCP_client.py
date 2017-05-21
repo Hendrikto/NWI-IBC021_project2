@@ -2,7 +2,10 @@
 import argparse
 import socket
 from random import randint
-from struct import pack
+
+from bTCP.message import BTCPMessage
+from bTCP.header import BTCPHeader
+from bTCP.state_machine import State, StateMachine
 
 # Handle arguments
 parser = argparse.ArgumentParser()
@@ -24,6 +27,46 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+
+class Closed(State):
+    def run(self, sock):
+        syn_message = BTCPMessage(
+            BTCPHeader(
+                id=randint(1, 2 ** 32),
+                syn=1, ack=0,
+                raw_flags=0,
+                window_size=0,
+                data_length=0
+            ),
+            b""
+        )
+        syn_message.header.syn = True
+        sock.send(syn_message.to_bytes())
+        return Client.syn_sent
+
+
+class SynSent(State):
+    pass
+
+
+class Established(State):
+    pass
+
+
+class FinSent(State):
+    pass
+
+
+class FinReceived(State):
+    pass
+
+
+class Client(StateMachine):
+    closed = Closed()
+    syn_sent = SynSent()
+    established = Established()
+    fin_sent = FinSent()
+    fin_received = FinReceived()
 
 
 # UDP socket which will transport your bTCP packets
