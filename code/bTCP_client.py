@@ -14,10 +14,16 @@ parser.add_argument(
     default=100
 )
 parser.add_argument("-i", "--input", help="File to send", default="tmp.file")
+parser.add_argument(
+    "-d", "--destination", help="Define destination IP", type=str,
+    default="127.0.0.1"
+)
+parser.add_argument(
+    "-p", "--port", help="Define destination port", type=int,
+    default=9001
+)
 args = parser.parse_args()
 
-destination_ip = "127.0.0.1"
-destination_port = 9001
 
 # bTCP header
 header_format = "I"
