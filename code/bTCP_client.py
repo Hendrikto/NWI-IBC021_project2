@@ -27,6 +27,9 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+with open(args.input, "rb") as input:
+    input_bytes = input.read()
+
 
 class Closed(State):
     def run(self, sock):
