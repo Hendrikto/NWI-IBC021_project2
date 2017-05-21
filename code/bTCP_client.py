@@ -45,7 +45,7 @@ class Closed(State):
             b""
         )
         syn_message.header.syn = True
-        sock.send_to(syn_message.to_bytes(), destination_addr)
+        sock.sendto(syn_message.to_bytes(), destination_addr)
         return Client.syn_sent
 
 
