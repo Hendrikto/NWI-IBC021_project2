@@ -17,5 +17,5 @@ class StateMachine(object):
         self.state = initial_state
         self.sock = sock
 
-    def run(self, sock: socket.socket):
+    def run(self):
         self.state = self.state.run(self.sock)
