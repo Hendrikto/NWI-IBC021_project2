@@ -50,7 +50,7 @@ class BTCPHeader(object):
     @data_length.setter
     def data_length(self, length):
         if length > bTCP.message.BTCPMessage.payload_size:
-            raise AttributeError("The payload cannot be this big.")
+            raise ValueError("The payload cannot be this big.")
         self._data_length = length
 
     @property
