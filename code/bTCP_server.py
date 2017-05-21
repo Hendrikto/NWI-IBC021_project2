@@ -15,7 +15,6 @@ parser.add_argument(
 parser.add_argument(
     "-o", "--output", help="Where to store file", default="tmp.file"
 )
-args = parser.parse_args()
 parser.add_argument(
     "-s", "--serverip", help="Define server IP", type=str,
     default="127.0.0.1"
@@ -24,6 +23,7 @@ parser.add_argument(
     "-p", "--serverport", help="Define server port", type=int,
     default=9001
 )
+args = parser.parse_args()
 
 
 # Define a header format
