@@ -25,14 +25,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-# bTCP header
-header_format = "I"
-bTCP_header = pack(header_format, randint(0, 100))
-bTCP_payload = ""
-udp_payload = bTCP_header
 
 # UDP socket which will transport your bTCP packets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-# send payload
-sock.sendto(udp_payload, (destination_ip, destination_port))
