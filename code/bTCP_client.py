@@ -30,6 +30,8 @@ args = parser.parse_args()
 with open(args.input, "rb") as input:
     input_bytes = input.read()
 
+destination_addr = (args.destination, args.port)
+
 
 class Closed(State):
     def run(self, sock):
@@ -44,7 +46,7 @@ class Closed(State):
             b""
         )
         syn_message.header.syn = True
-        sock.send(syn_message.to_bytes())
+        sock.send_to(syn_message.to_bytes(), destination_addr)
         return Client.syn_sent
 
 
