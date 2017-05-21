@@ -22,8 +22,7 @@ parser.add_argument(
     default="127.0.0.1"
 )
 parser.add_argument(
-    "-p", "--port", help="Define destination port", type=int,
-    default=9001
+    "-p", "--port", help="Define destination port", type=int, default=9001
 )
 args = parser.parse_args()
 
