@@ -21,6 +21,19 @@ class BTCPHeaderTest(unittest.TestCase):
             BTCPHeader(1, 2, 3, 4, 5, 6)
         )
 
+    def test_flags(self):
+        header = BTCPHeader(0, 0, 0, 0, 0, 0)
+        header.syn = True
+        self.assertEqual(header._flags, 1)
+        header.ack = True
+        self.assertEqual(header._flags, 3)
+        header.fin = True
+        self.assertEqual(header._flags, 7)
+        header.syn = False
+        header.ack = False
+        header.fin = False
+        self.assertEqual(header._flags, 0)
+
 
 class BTCPMessageTest(unittest.TestCase):
     def test_padding(self):
