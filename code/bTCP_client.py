@@ -62,7 +62,9 @@ class SynSent(State):
             return Client.closed
         if not (
             synack_message.header.syn and
-            synack_message.header.ack
+            synack_message.header.ack and
+            synack_message.header.syn_number == 1 and
+            synack_message.header.ack_number == 2
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
