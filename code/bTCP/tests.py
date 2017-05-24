@@ -43,7 +43,7 @@ class BTCPMessageTest(unittest.TestCase):
         )
 
     def test_serialization_deserialization(self):
-        header = BTCPHeader(1, 2, 3, 4, 5, 6)
+        header = BTCPHeader(1, 2, 3, 4, 5, 7)
         message = BTCPMessage(header, b"payload")
         self.assertEqual(
             message,

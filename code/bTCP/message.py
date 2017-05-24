@@ -15,7 +15,7 @@ class BTCPMessage(object):
     def from_bytes(cls, data: bytes):
         header = BTCPHeader.from_bytes(data[:12])
         checksum = struct.unpack("!L", data[12:16])[0]
-        payload = data[16:16 + header.data_length + 1]
+        payload = data[16:16 + header.data_length]
         if checksum == zlib.crc32(data[:12] + payload):
             return cls(header, payload)
         else:
