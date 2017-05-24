@@ -61,27 +61,26 @@ class SynSent(State):
         except ChecksumMismatch:
             print("SynSent: checksum mismatch", file=sys.stderr)
             return Client.closed
-        if (
+        if not (
                     synack_message.header.syn and
                     synack_message.header.ack
         ):
-            ack_message = BTCPMessage(
-                BTCPHeader(
-                    id=synack_message.header.id,
-                    syn=synack_message.header.syn,
-                    ack=synack_message.header.syn + 1,
-                    raw_flags=0,
-                    window_size=0,
-                    data_length=0
-                ),
-                b""
-            )
-            ack_message.header.ack = True
-            sock.sendto(ack_message.to_bytes(), destination_addr)
-            return Client.established
-        else:
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
+        ack_message = BTCPMessage(
+            BTCPHeader(
+                id=synack_message.header.id,
+                syn=synack_message.header.syn,
+                ack=synack_message.header.syn + 1,
+                raw_flags=0,
+                window_size=0,
+                data_length=0
+            ),
+            b""
+        )
+        ack_message.header.ack = True
+        sock.sendto(ack_message.to_bytes(), destination_addr)
+        return Client.established
 
 
 class Established(State):
