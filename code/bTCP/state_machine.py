@@ -4,7 +4,7 @@ import socket
 
 
 class State(object):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         raise NotImplementedError
 
 
