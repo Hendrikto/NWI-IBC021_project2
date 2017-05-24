@@ -2,6 +2,7 @@
 import argparse
 import socket
 from random import randint
+import sys
 
 from bTCP.message import BTCPMessage
 from bTCP.header import BTCPHeader
@@ -50,7 +51,31 @@ class Closed(State):
 
 
 class SynSent(State):
-    pass
+    def run(self, sock):
+        try:
+            synack_message = BTCPMessage.from_bytes(sock.recv(1016))
+        except socket.timeout:
+            print("SynSent: timed out", file=sys.stderr)
+            return Client.closed
+        if (
+                    synack_message.header.syn and
+                    synack_message.header.ack
+        ):
+            ack_message = BTCPMessage(
+                BTCPHeader(
+                    id=synack_message.header.id,
+                    syn=synack_message.header.syn,
+                    ack=synack_message.header.syn + 1,
+                    raw_flags=0,
+                    window_size=0,
+                    data_length=0
+                ),
+                b""
+            )
+            sock.sendto(ack_message.to_bytes(), destination_addr)
+            return Client.established
+        else:
+            print("SynSent: wrong message received", file=sys.stderr)
 
 
 class Established(State):
