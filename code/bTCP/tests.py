@@ -88,6 +88,10 @@ class BTCPMessageTest(unittest.TestCase):
             BTCPMessage.from_bytes, message_bad_payload
         )
 
+    def test_data_length(self):
+        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5), b"payload")
+        self.assertEqual(message.header.data_length, len(b"payload"))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
