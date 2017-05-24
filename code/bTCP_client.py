@@ -72,6 +72,7 @@ class SynSent(State):
                 ),
                 b""
             )
+            ack_message.header.ack = True
             sock.sendto(ack_message.to_bytes(), destination_addr)
             return Client.established
         else:
