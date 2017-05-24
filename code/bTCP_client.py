@@ -61,8 +61,8 @@ class SynSent(State):
             print("SynSent: checksum mismatch", file=sys.stderr)
             return Client.closed
         if not (
-                    synack_message.header.syn and
-                    synack_message.header.ack
+            synack_message.header.syn and
+            synack_message.header.ack
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
