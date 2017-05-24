@@ -84,7 +84,31 @@ class Established(State):
 
 
 class FinSent(State):
-    pass
+    # TODO: Think about timeout and/or resending the packet
+    def run(self, sock):
+        try:
+            finack_message = BTCPMessage.from_bytes(sock.recv(1016))
+        except socket.timeout:
+            print("SynSent: timed out", file=sys.stderr)
+            return Client.closed
+        if (
+            finack_message.header.fin and
+            finack_message.header.ack
+        ):
+            ack_message = BTCPMessage(
+                BTCPHeader(
+                    id=finack_message.header.id,
+                    syn=finack_message.header.syn,
+                    ack=finack_message.header.syn + 1,
+                    raw_flags=0,
+                    window_size=0,
+                    data_length=0
+                ),
+                b""
+            )
+            ack_message.header.ack = True
+            sock.sendto(ack_message.to_bytes(), destination_addr)
+        return Client.closed
 
 
 class FinReceived(State):
