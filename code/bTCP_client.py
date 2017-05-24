@@ -115,7 +115,13 @@ class FinSent(State):
 
 
 class FinReceived(State):
-    pass
+    def run(self, sock):
+        try:
+            sock.recv(1016)
+            return Client.closed
+        except socket.timeout:
+            print("FinReceived: timed out", file=sys.stderr)
+            return Client.closed
 
 
 class Client(StateMachine):
