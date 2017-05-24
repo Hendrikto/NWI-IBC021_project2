@@ -26,12 +26,6 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# Define a header format
-header_format = "I"
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
-sock.bind((args.serverip, args.serverport))
-
 
 class Listen(State):
     pass
