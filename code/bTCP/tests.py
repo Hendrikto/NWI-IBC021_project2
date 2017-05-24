@@ -22,7 +22,7 @@ class BTCPHeaderTest(unittest.TestCase):
         )
 
     def test_flags(self):
-        header = BTCPHeader(0, 0, 0, 0, 0, 0)
+        header = BTCPHeader(0, 0, 0, 0, 0)
         header.syn = True
         self.assertEqual(header._flags, 1)
         header.ack = True
@@ -37,13 +37,13 @@ class BTCPHeaderTest(unittest.TestCase):
 
 class BTCPMessageTest(unittest.TestCase):
     def test_padding(self):
-        header = BTCPHeader(1, 2, 3, 4, 5, 6)
+        header = BTCPHeader(1, 2, 3, 4, 5)
         self.assertEqual(
             len(BTCPMessage(header, b"short payload").to_bytes()), 1016
         )
 
     def test_serialization_deserialization(self):
-        header = BTCPHeader(1, 2, 3, 4, 5, 7)
+        header = BTCPHeader(1, 2, 3, 4, 5)
         message = BTCPMessage(header, b"payload")
         self.assertEqual(
             message,
@@ -51,10 +51,10 @@ class BTCPMessageTest(unittest.TestCase):
         )
 
     def test_checksum_bad_header(self):
-        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5, 6), b"payload")
+        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5), b"payload")
         message_bytes = message.to_bytes()
         message_bad_header = (
-            BTCPHeader(1, 2, 3, 4, 5, 7).to_bytes() +
+            BTCPHeader(1, 2, 3, 4, 5, 420).to_bytes() +
             message_bytes[12:]
         )
         self.assertRaises(
@@ -63,7 +63,7 @@ class BTCPMessageTest(unittest.TestCase):
         )
 
     def test_checksum_bad_checksum(self):
-        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5, 6), b"payload")
+        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5), b"payload")
         message_bytes = message.to_bytes()
         message_bad_checksum = (
             message_bytes[:12] +
@@ -76,7 +76,7 @@ class BTCPMessageTest(unittest.TestCase):
         )
 
     def test_checksum_bad_payload(self):
-        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5, 6), b"payload")
+        message = BTCPMessage(BTCPHeader(1, 2, 3, 4, 5), b"payload")
         message_bytes = message.to_bytes()
         message_bad_payload = (
             message_bytes[:16] +

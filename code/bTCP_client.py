@@ -42,7 +42,6 @@ class Closed(State):
                 syn=1, ack=0,
                 raw_flags=0,
                 window_size=0,
-                data_length=0
             ),
             b""
         )
@@ -74,7 +73,6 @@ class SynSent(State):
                 ack=synack_message.header.syn + 1,
                 raw_flags=0,
                 window_size=0,
-                data_length=0
             ),
             b""
         )
@@ -106,7 +104,6 @@ class FinSent(State):
                     ack=finack_message.header.syn + 1,
                     raw_flags=0,
                     window_size=0,
-                    data_length=0
                 ),
                 b""
             )

@@ -23,7 +23,7 @@ class BTCPHeader(object):
             ack: int,
             raw_flags: int,
             window_size: int,
-            data_length: int,
+            data_length: int=0,
     ):
         self.id = id
         self.syn_number = syn

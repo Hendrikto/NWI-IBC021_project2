@@ -30,6 +30,7 @@ class BTCPMessage(object):
             raise AttributeError("Payload is too big.")
         self.header = header
         self.payload = payload
+        self.header.data_length = len(payload)
 
     def __str__(self):
         header = str(self.header).replace("\t", "\t\t")
