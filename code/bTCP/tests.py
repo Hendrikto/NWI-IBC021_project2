@@ -1,3 +1,4 @@
+# author: Hendrik Werner s4549775
 import struct
 import unittest
 
