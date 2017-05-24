@@ -1,7 +1,6 @@
 #!/usr/local/bin/python3
 import argparse
 import socket
-from struct import unpack
 
 # Handle arguments
 parser = argparse.ArgumentParser()
