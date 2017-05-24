@@ -2,6 +2,8 @@
 import argparse
 import socket
 
+from bTCP.state_machine import StateMachine, State
+
 # Handle arguments
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -24,13 +26,50 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-
 # Define a header format
 header_format = "I"
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
 sock.bind((args.serverip, args.serverport))
 
-while True:
-    data, addr = sock.recvfrom(1016)
-    print(unpack(header_format, data))
+
+class Listen(State):
+    pass
+
+
+class SynReceived(State):
+    pass
+
+
+class Established(State):
+    pass
+
+
+class FinSent(State):
+    pass
+
+
+class FinReceived(State):
+    pass
+
+
+class Closed(State):
+    pass
+
+
+class Server(StateMachine):
+    listen = Listen()
+    syn_received = SynReceived()
+    established = Established()
+    fin_sent = FinSent()
+    fin_received = FinReceived()
+    closed = Closed()
+
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server = Server(Server.listen, sock)
+
+while server.state is not Server.closed:
+    server.run()
+
+sock.close()
