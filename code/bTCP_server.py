@@ -61,6 +61,7 @@ class Server(StateMachine):
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind((args.serverip, args.serverport))
 server = Server(Server.listen, sock)
 
 while server.state is not Server.closed:
