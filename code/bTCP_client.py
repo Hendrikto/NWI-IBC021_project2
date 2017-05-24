@@ -94,7 +94,7 @@ class FinSent(State):
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
-            print("SynSent: timed out", file=sys.stderr)
+            print("FinSent: timed out", file=sys.stderr)
             return Client.closed
         if (
             finack_message.header.fin and
