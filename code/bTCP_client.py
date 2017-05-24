@@ -81,6 +81,7 @@ class SynSent(State):
             return Client.established
         else:
             print("SynSent: wrong message received", file=sys.stderr)
+            return Client.closed
 
 
 class Established(State):
