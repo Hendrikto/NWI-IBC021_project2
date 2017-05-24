@@ -4,6 +4,7 @@ import socket
 from random import randint
 import sys
 
+from bTCP.exceptions import ChecksumMismatch
 from bTCP.message import BTCPMessage
 from bTCP.header import BTCPHeader
 from bTCP.state_machine import State, StateMachine
@@ -56,6 +57,9 @@ class SynSent(State):
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("SynSent: timed out", file=sys.stderr)
+            return Client.closed
+        except ChecksumMismatch:
+            print("SynSent: checksum mismatch", file=sys.stderr)
             return Client.closed
         if (
                     synack_message.header.syn and
