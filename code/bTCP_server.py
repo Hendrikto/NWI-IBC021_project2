@@ -67,8 +67,8 @@ class Listen(State):
 
 
 class SynReceived(State):
-    sock.settimeout(args.timeout / 1000)
     def run(self,sock):
+        sock.settimeout(args.timeout / 1000)
         try:
             sock.recv(1016)
         except socket.timeout:
