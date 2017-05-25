@@ -2,6 +2,9 @@
 import argparse
 import socket
 
+from bTCP.exceptions import ChecksumMismatch
+from bTCP.message import BTCPMessage
+from bTCP.header import BTCPHeader
 from bTCP.state_machine import StateMachine, State
 
 # Handle arguments
@@ -28,15 +31,64 @@ args = parser.parse_args()
 
 
 class Listen(State):
-    pass
+    def run(self, sock):
+        try:
+            data, clientaddr = sock.recvfrom(1016)
+            syn_message = BTCPMessage.from_bytes(data)
+        except ChecksumMismatch:
+            print("Listen: checksum mismatch", file=sys.stderr)
+            return Server.listen
+        if (
+            syn_message.header.syn and
+            syn_message.header.syn_number == 1 and
+            syn_message.header.ack_number == 0
+        ):
+            synack_message = BTCPMessage(
+                BTCPHeader(
+                    id=syn_message.header.id,
+                    syn=syn_message.header.syn,
+                    ack=syn_message.header.syn + 1,
+                    raw_flags=0,
+                    window_size=args.window,
+                ),
+                b""
+        )
+        synack_message.header.syn = True
+        synack_message.header.ack = True
+        sock.sendto(synack_message.to_bytes(), clientaddr)
+        return Server.syn_received
+
+
 
 
 class SynReceived(State):
-    pass
+    def run(self,sock):
+        try:
+            data, clientaddr = sock.recvfrom(1016)
+            message = BTCPMessage.from_bytes(data)
+        except socket.timeout:
+            print("SynRecv: timeout error", file=sys.stderr)
+            return Server.listen
+        except ChecksumMismatch:
+            print("SynRecv: Checksum error", file=sys.stderr)
+            return Server.established
+        if (
+            (
+                message.header.ack and
+                message.header.ack_number == 2 and
+                message.header.syn_number == 2
+            )
+            or
+            (
+                message.header.syn_number > 2
+            )
+        ):
+            return Server.established
 
 
 class Established(State):
-    pass
+    def run(self, sock):
+        print("Connection established")
 
 
 class FinSent(State):
