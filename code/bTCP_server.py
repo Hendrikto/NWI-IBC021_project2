@@ -66,26 +66,15 @@ class Listen(State):
 class SynReceived(State):
     def run(self,sock):
         try:
-            data, clientaddr = sock.recvfrom(1016)
-            message = BTCPMessage.from_bytes(data)
+            sock.recv(1016)
         except socket.timeout:
             print("SynRecv: timeout error", file=sys.stderr)
             return Server.listen
         except ChecksumMismatch:
             print("SynRecv: Checksum error", file=sys.stderr)
             return Server.established
-        if (
-            (
-                message.header.ack and
-                message.header.ack_number == 2 and
-                message.header.syn_number == 2
-            )
-            or
-            (
-                message.header.syn_number > 2
-            )
-        ):
-            return Server.established
+        return Server.established
+
 
 
 class Established(State):
