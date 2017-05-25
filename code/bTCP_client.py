@@ -143,3 +143,5 @@ class Client(StateMachine):
 # UDP socket which will transport your bTCP packets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(args.timeout / 1000)
+
+client = Client(Client.closed, sock)
