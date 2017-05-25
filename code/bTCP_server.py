@@ -34,6 +34,7 @@ args = parser.parse_args()
 
 class Listen(State):
     def run(self, sock):
+        sock.setblocking(True)
         try:
             data, clientaddr = sock.recvfrom(1016)
             syn_message = BTCPMessage.from_bytes(data)
@@ -66,6 +67,7 @@ class Listen(State):
 
 
 class SynReceived(State):
+    sock.settimeout(args.timeout / 1000)
     def run(self,sock):
         try:
             sock.recv(1016)
