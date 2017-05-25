@@ -100,8 +100,8 @@ class FinSent(State):
             # TODO: resend FIN
             return Client.fin_sent
         if not (
-                finack_message.header.fin and
-                finack_message.header.ack
+            finack_message.header.fin and
+            finack_message.header.ack
             # TODO: SYN and ACK numbers
         ):
             print("FinSent: wrong message received")
