@@ -2,6 +2,8 @@
 import argparse
 import socket
 
+import sys
+
 from bTCP.exceptions import ChecksumMismatch
 from bTCP.message import BTCPMessage
 from bTCP.header import BTCPHeader
