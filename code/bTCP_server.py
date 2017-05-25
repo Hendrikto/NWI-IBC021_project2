@@ -40,20 +40,22 @@ class Listen(State):
         except ChecksumMismatch:
             print("Listen: checksum mismatch", file=sys.stderr)
             return Server.listen
-        if (
+        if not (
             syn_message.header.syn and
             syn_message.header.syn_number == 1 and
             syn_message.header.ack_number == 0
         ):
-            synack_message = BTCPMessage(
-                BTCPHeader(
-                    id=syn_message.header.id,
-                    syn=syn_message.header.syn,
-                    ack=syn_message.header.syn + 1,
-                    raw_flags=0,
-                    window_size=args.window,
-                ),
-                b""
+            print("Listen: wrong message received", file=sys.stderr)
+            return Server.listen
+        synack_message = BTCPMessage(
+            BTCPHeader(
+                id=syn_message.header.id,
+                syn=syn_message.header.syn,
+                ack=syn_message.header.syn + 1,
+                raw_flags=0,
+                window_size=args.window,
+            ),
+            b""
         )
         synack_message.header.syn = True
         synack_message.header.ack = True
