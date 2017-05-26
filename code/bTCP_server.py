@@ -110,10 +110,12 @@ class Established(State):
     def run(self, sock: socket.socket):
         print("Connection established")
         output = bytes()
+        global expected_syn
         while True:
             try:
                 data = sock.recv(1016)
                 packet = BTCPMessage.from_bytes(data)
+                expected_syn += 1
                 if not(packet.header.fin):
                     output += packet.payload
                     self.send_ack(sock, packet)
@@ -127,8 +129,6 @@ class Established(State):
         return Server.closed
 
     def send_ack(self, sock, packet):
-        global expected_syn
-        expected_syn += 1
         global syn_number
         ack_message = BTCPMessage(
             BTCPHeader(
