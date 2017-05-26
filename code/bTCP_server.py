@@ -81,10 +81,10 @@ class SynReceived(State):
         return Server.established
 
 
-
 class Established(State):
     def run(self, sock):
         print("Connection established")
+        return Server.closed
 
 
 class FinSent(State):
