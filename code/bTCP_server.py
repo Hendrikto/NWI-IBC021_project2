@@ -33,6 +33,7 @@ args = parser.parse_args()
 
 expected_syn = None
 syn_number = None
+client_address = None
 
 
 class Listen(State):
@@ -41,7 +42,8 @@ class Listen(State):
         global syn_number
         syn_number = 100
         try:
-            data, clientaddr = sock.recvfrom(1016)
+            global client_address
+            data, client_address = sock.recvfrom(1016)
             syn_message = BTCPMessage.from_bytes(data)
         except ChecksumMismatch:
             print("Listen: checksum mismatch", file=sys.stderr)
@@ -66,7 +68,7 @@ class Listen(State):
         )
         synack_message.header.syn = True
         synack_message.header.ack = True
-        sock.sendto(synack_message.to_bytes(), clientaddr)
+        sock.sendto(synack_message.to_bytes(), client_address)
         syn_number += 1
         return Server.syn_received
 
