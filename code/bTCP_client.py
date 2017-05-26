@@ -128,7 +128,6 @@ class Established(State):
         )
         fin_message.header.fin = True
         sock.sendto(fin_message.to_bytes(), destination_addr)
-        syn_number += 1
         return Client.fin_sent
 
 
@@ -153,6 +152,8 @@ class FinSent(State):
             print("FinSent: wrong message received")
             # TODO: resend FIN
             return Client.fin_sent
+        global syn_number
+        syn_number += 1
         ack_message = BTCPMessage(
             BTCPHeader(
                 id=finack_message.header.id,
