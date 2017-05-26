@@ -109,7 +109,40 @@ class SynReceived(State):
 class Established(State):
     def run(self, sock: socket.socket):
         print("Connection established")
+        output = bytes()
+        while True:
+            try:
+                data = sock.recv(1016)
+                packet = BTCPMessage.from_bytes(data)
+                if not(packet.header.fin):
+                    output += packet.payload
+                    self.send_ack(sock, packet)
+            except socket.timeout:
+                print("SynRecv: timeout error", file=sys.stderr)
+                break
+            except ChecksumMismatch:
+                print("Established: ChecksumMismatch", file=sys.stderr)
+        with open("test", "wb") as f:
+            f.write(output)
         return Server.closed
+
+    def send_ack(self, sock, packet):
+        global expected_syn
+        expected_syn += 1
+        global syn_number
+        ack_message = BTCPMessage(
+            BTCPHeader(
+                id=stream_id,
+                syn=syn_number,
+                ack=expected_syn,
+                raw_flags=0,
+                window_size=args.window,
+            ),
+            b""
+        )
+        ack_message.header.ack = True
+        sock.sendto(ack_message.to_bytes(), client_address)
+        syn_number += 1
 
 
 class FinSent(State):
