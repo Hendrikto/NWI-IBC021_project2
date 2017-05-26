@@ -84,7 +84,20 @@ class SynReceived(State):
             sock.recv(1016)
         except socket.timeout:
             print("SynRecv: timeout error", file=sys.stderr)
-            return Server.listen
+            synack_message = BTCPMessage(
+                BTCPHeader(
+                    id=stream_id,
+                    syn=syn_number,
+                    ack=expected_syn,
+                    raw_flags=0,
+                    window_size=args.window,
+                ),
+                b""
+            )
+            synack_message.header.syn = True
+            synack_message.header.ack = True
+            sock.sendto(synack_message.to_bytes(), client_address)
+            return Server.syn_received
         except ChecksumMismatch:
             print("SynRecv: Checksum error", file=sys.stderr)
             expected_syn += 1
