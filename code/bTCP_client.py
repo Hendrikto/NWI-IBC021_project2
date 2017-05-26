@@ -33,14 +33,18 @@ with open(args.input, "rb") as input:
 
 destination_addr = (args.destination, args.port)
 expected_syn = None
+syn_number = None
 
 
 class Closed(State):
     def run(self, sock):
+        global syn_number
+        syn_number = 0
         syn_message = BTCPMessage(
             BTCPHeader(
                 id=randint(1, 2 ** 32),
-                syn=1, ack=0,
+                syn=syn_number,
+                ack=0,
                 raw_flags=0,
                 window_size=0,
             ),
@@ -48,6 +52,7 @@ class Closed(State):
         )
         syn_message.header.syn = True
         sock.sendto(syn_message.to_bytes(), destination_addr)
+        syn_number += 1
         return Client.syn_sent
 
 
@@ -64,17 +69,17 @@ class SynSent(State):
         if not (
             synack_message.header.syn and
             synack_message.header.ack and
-            synack_message.header.ack_number == 2
+            synack_message.header.ack_number == syn_number
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
         global expected_syn
-        expected_syn = synack_message.header.syn_number
+        expected_syn = synack_message.header.syn_number + 1
         ack_message = BTCPMessage(
             BTCPHeader(
                 id=synack_message.header.id,
-                syn=synack_message.header.syn,
-                ack=synack_message.header.syn + 1,
+                syn=syn_number,
+                ack=expected_syn,
                 raw_flags=0,
                 window_size=0,
             ),
@@ -82,6 +87,8 @@ class SynSent(State):
         )
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), destination_addr)
+        global syn_number
+        syn_number += 1
         return Client.established
 
 

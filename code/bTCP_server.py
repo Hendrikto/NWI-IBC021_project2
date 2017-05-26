@@ -32,11 +32,14 @@ parser.add_argument(
 args = parser.parse_args()
 
 expected_syn = None
+syn_number = None
 
 
 class Listen(State):
     def run(self, sock):
         sock.setblocking(True)
+        global syn_number
+        syn_number = 100
         try:
             data, clientaddr = sock.recvfrom(1016)
             syn_message = BTCPMessage.from_bytes(data)
@@ -50,12 +53,12 @@ class Listen(State):
             print("Listen: wrong message received", file=sys.stderr)
             return Server.listen
         global expected_syn
-        expected_syn = syn_message.header.syn_number
+        expected_syn = syn_message.header.syn_number + 1
         synack_message = BTCPMessage(
             BTCPHeader(
                 id=syn_message.header.id,
-                syn=syn_message.header.syn,
-                ack=syn_message.header.syn + 1,
+                syn=syn_number,
+                ack=expected_syn,
                 raw_flags=0,
                 window_size=args.window,
             ),
@@ -64,12 +67,14 @@ class Listen(State):
         synack_message.header.syn = True
         synack_message.header.ack = True
         sock.sendto(synack_message.to_bytes(), clientaddr)
+        syn_number += 1
         return Server.syn_received
 
 
 class SynReceived(State):
     def run(self, sock):
         sock.settimeout(args.timeout / 1000)
+        global expected_syn
         try:
             sock.recv(1016)
         except socket.timeout:
@@ -77,7 +82,9 @@ class SynReceived(State):
             return Server.listen
         except ChecksumMismatch:
             print("SynRecv: Checksum error", file=sys.stderr)
+            expected_syn += 1
             return Server.established
+        expected_syn += 1
         return Server.established
 
 
