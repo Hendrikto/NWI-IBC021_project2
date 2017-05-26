@@ -78,6 +78,7 @@ class SynSent(State):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
         global expected_syn
+        global syn_number
         expected_syn = synack_message.header.syn_number + 1
         ack_message = BTCPMessage(
             BTCPHeader(
@@ -91,7 +92,6 @@ class SynSent(State):
         )
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), destination_addr)
-        global syn_number
         syn_number += 1
         return Client.established
 
@@ -100,6 +100,7 @@ class Established(State):
     def run(self, sock: socket.socket):
         print("Connection established", syn_number, expected_syn)
         global input_bytes
+        global syn_number
         while input_bytes:
             data = input_bytes[:BTCPMessage.payload_size]
             input_bytes = input_bytes[BTCPMessage.payload_size:]
@@ -114,7 +115,6 @@ class Established(State):
                 data
             )
             sock.sendto(message.to_bytes(), destination_addr)
-            global syn_number
             syn_number += 1
         fin_message = BTCPMessage(
             BTCPHeader(
