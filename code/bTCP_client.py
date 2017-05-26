@@ -156,9 +156,9 @@ class FinSent(State):
         syn_number += 1
         ack_message = BTCPMessage(
             BTCPHeader(
-                id=finack_message.header.id,
-                syn=finack_message.header.syn,
-                ack=finack_message.header.syn + 1,
+                id=stream_id,
+                syn=syn_number,
+                ack=expected_syn,
                 raw_flags=0,
                 window_size=0,
             ),
