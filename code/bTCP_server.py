@@ -64,10 +64,8 @@ class Listen(State):
         return Server.syn_received
 
 
-
-
 class SynReceived(State):
-    def run(self,sock):
+    def run(self, sock):
         sock.settimeout(args.timeout / 1000)
         try:
             sock.recv(1016)
