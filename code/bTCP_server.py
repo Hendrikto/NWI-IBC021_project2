@@ -31,6 +31,8 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+expected_syn = None
+
 
 class Listen(State):
     def run(self, sock):
@@ -43,11 +45,12 @@ class Listen(State):
             return Server.listen
         if not (
             syn_message.header.syn and
-            syn_message.header.syn_number == 1 and
             syn_message.header.ack_number == 0
         ):
             print("Listen: wrong message received", file=sys.stderr)
             return Server.listen
+        global expected_syn
+        expected_syn = syn_message.header.syn_number
         synack_message = BTCPMessage(
             BTCPHeader(
                 id=syn_message.header.id,

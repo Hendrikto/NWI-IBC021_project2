@@ -32,6 +32,7 @@ with open(args.input, "rb") as input:
     input_bytes = input.read()
 
 destination_addr = (args.destination, args.port)
+expected_syn = None
 
 
 class Closed(State):
@@ -63,11 +64,12 @@ class SynSent(State):
         if not (
             synack_message.header.syn and
             synack_message.header.ack and
-            synack_message.header.syn_number == 1 and
             synack_message.header.ack_number == 2
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
+        global expected_syn
+        expected_syn = synack_message.header.syn_number
         ack_message = BTCPMessage(
             BTCPHeader(
                 id=synack_message.header.id,
