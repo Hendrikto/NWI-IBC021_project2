@@ -34,6 +34,7 @@ args = parser.parse_args()
 expected_syn = None
 syn_number = None
 client_address = None
+stream_id = 0
 
 
 class Listen(State):
@@ -56,9 +57,11 @@ class Listen(State):
             return Server.listen
         global expected_syn
         expected_syn = syn_message.header.syn_number + 1
+        global stream_id
+        stream_id = syn_message.header.id
         synack_message = BTCPMessage(
             BTCPHeader(
-                id=syn_message.header.id,
+                id=stream_id,
                 syn=syn_number,
                 ack=expected_syn,
                 raw_flags=0,

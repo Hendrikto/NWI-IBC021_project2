@@ -34,15 +34,18 @@ with open(args.input, "rb") as input:
 destination_addr = (args.destination, args.port)
 expected_syn = None
 syn_number = None
+stream_id = 0
 
 
 class Closed(State):
     def run(self, sock):
         global syn_number
         syn_number = 0
+        global stream_id
+        stream_id = randint(0, 2 ** 32)
         syn_message = BTCPMessage(
             BTCPHeader(
-                id=randint(1, 2 ** 32),
+                id=stream_id,
                 syn=syn_number,
                 ack=0,
                 raw_flags=0,
@@ -77,7 +80,7 @@ class SynSent(State):
         expected_syn = synack_message.header.syn_number + 1
         ack_message = BTCPMessage(
             BTCPHeader(
-                id=synack_message.header.id,
+                id=stream_id,
                 syn=syn_number,
                 ack=expected_syn,
                 raw_flags=0,
