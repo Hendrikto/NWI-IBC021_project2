@@ -38,7 +38,7 @@ stream_id = 0
 
 
 class Closed(State):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         global syn_number
         syn_number = 0
         global stream_id
@@ -60,7 +60,7 @@ class Closed(State):
 
 
 class SynSent(State):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         try:
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
@@ -100,7 +100,7 @@ class Established(State):
 
 
 class FinSent(State):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
@@ -135,7 +135,7 @@ class FinSent(State):
 
 
 class FinReceived(State):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         try:
             sock.recv(1016)
             return Client.closed

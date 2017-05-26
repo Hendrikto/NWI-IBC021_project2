@@ -38,7 +38,7 @@ stream_id = 0
 
 
 class Listen(State):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         sock.setblocking(True)
         global syn_number
         syn_number = 100
@@ -77,7 +77,7 @@ class Listen(State):
 
 
 class SynReceived(State):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         sock.settimeout(args.timeout / 1000)
         global expected_syn
         try:
@@ -107,7 +107,7 @@ class SynReceived(State):
 
 
 class Established(State):
-    def run(self, sock):
+    def run(self, sock: socket.socket):
         print("Connection established")
         return Server.closed
 
