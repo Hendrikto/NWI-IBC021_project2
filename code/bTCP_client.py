@@ -97,7 +97,39 @@ class SynSent(State):
 
 
 class Established(State):
-    pass
+    def run(self, sock: socket.socket):
+        print("Connection established", syn_number, expected_syn)
+        global input_bytes
+        while input_bytes:
+            data = input_bytes[:BTCPMessage.payload_size]
+            input_bytes = input_bytes[BTCPMessage.payload_size:]
+            message = BTCPMessage(
+                BTCPHeader(
+                    id=stream_id,
+                    syn=syn_number,
+                    ack=expected_syn,
+                    raw_flags=0,
+                    window_size=0,
+                ),
+                data
+            )
+            sock.sendto(message.to_bytes(), destination_addr)
+            global syn_number
+            syn_number += 1
+        fin_message = BTCPMessage(
+            BTCPHeader(
+                id=stream_id,
+                syn=syn_number,
+                ack=expected_syn,
+                raw_flags=0,
+                window_size=0,
+            ),
+            b""
+        )
+        fin_message.header.fin = True
+        sock.sendto(fin_message.to_bytes(), destination_addr)
+        syn_number += 1
+        return Client.fin_sent
 
 
 class FinSent(State):
