@@ -70,6 +70,7 @@ class SynSent(State):
             print("SynSent: checksum mismatch", file=sys.stderr)
             return Client.closed
         if not (
+            synack_message.header.id == stream_id and
             synack_message.header.syn and
             synack_message.header.ack and
             synack_message.header.ack_number == syn_number
@@ -112,6 +113,7 @@ class FinSent(State):
             # TODO: resend FIN
             return Client.fin_sent
         if not (
+            finack_message.header.id == stream_id and
             finack_message.header.fin and
             finack_message.header.ack
             # TODO: SYN and ACK numbers
