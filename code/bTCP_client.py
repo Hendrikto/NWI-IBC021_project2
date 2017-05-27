@@ -35,6 +35,12 @@ destination_addr = (args.destination, args.port)
 expected_syn = None
 syn_number = None
 stream_id = 0
+highest_ack = 0
+
+
+def accept_ack(ack: int):
+    global highest_ack
+    highest_ack = ack if ack > highest_ack else highest_ack
 
 
 class Closed(State):
@@ -76,6 +82,7 @@ class SynSent(State):
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
+        accept_ack(synack_message.header.ack_number)
         global expected_syn
         global syn_number
         expected_syn = synack_message.header.syn_number + 1
@@ -151,6 +158,7 @@ class FinSent(State):
             print("FinSent: wrong message received")
             self.send_fin(sock)
             return Client.fin_sent
+        accept_ack(finack_message.header.ack_number)
         global syn_number
         syn_number += 1
         ack_message = BTCPMessage(
