@@ -115,17 +115,20 @@ class Established(State):
             try:
                 data = sock.recv(1016)
                 packet = BTCPMessage.from_bytes(data)
-                expected_syn += 1
-                if not packet.header.fin:
+                if not packet.header.fin and not packet.header.ack:
                     output += packet.payload
+                    expected_syn += 1
                     self.send_ack(sock, packet)
+                elif packet.header.fin:
+                    expected_syn += 1
+                    with open("test", "wb") as f:
+                        f.write(output)
+                    return Server.fin_received
             except socket.timeout:
-                print("SynRecv: timeout error", file=sys.stderr)
+                print("Established: timeout error", file=sys.stderr)
                 break
             except ChecksumMismatch:
                 print("Established: ChecksumMismatch", file=sys.stderr)
-        with open("test", "wb") as f:
-            f.write(output)
         return Server.closed
 
     def send_ack(self, sock):
@@ -142,7 +145,6 @@ class Established(State):
         )
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), client_address)
-        syn_number += 1
 
 
 class FinSent(State):
