@@ -146,8 +146,9 @@ class FinSent(State):
         if not (
             finack_message.header.id == stream_id and
             finack_message.header.fin and
-            finack_message.header.ack
-            # TODO: SYN and ACK numbers
+            finack_message.header.ack and
+            finack_message.header.syn_number == expected_syn and
+            finack_message.header.ack_number == syn_number
         ):
             print("FinSent: wrong message received")
             # TODO: resend FIN
