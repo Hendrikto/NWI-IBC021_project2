@@ -98,10 +98,6 @@ class SynReceived(State):
             synack_message.header.ack = True
             sock.sendto(synack_message.to_bytes(), client_address)
             return Server.syn_received
-        except ChecksumMismatch:
-            print("SynRecv: Checksum error", file=sys.stderr)
-            expected_syn += 1
-            return Server.established
         expected_syn += 1
         return Server.established
 
