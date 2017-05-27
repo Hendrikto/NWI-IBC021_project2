@@ -72,8 +72,7 @@ class SynSent(State):
         if not (
             synack_message.header.id == stream_id and
             synack_message.header.syn and
-            synack_message.header.ack and
-            synack_message.header.ack_number == syn_number
+            synack_message.header.ack
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.closed
@@ -147,8 +146,7 @@ class FinSent(State):
             finack_message.header.id == stream_id and
             finack_message.header.fin and
             finack_message.header.ack and
-            finack_message.header.syn_number == expected_syn and
-            finack_message.header.ack_number == syn_number
+            finack_message.header.syn_number == expected_syn
         ):
             print("FinSent: wrong message received")
             self.send_fin(sock)
