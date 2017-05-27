@@ -118,7 +118,7 @@ class Established(State):
                 if not packet.header.fin and not packet.header.ack:
                     output += packet.payload
                     expected_syn += 1
-                    self.send_ack(sock, packet)
+                    self.send_ack(sock)
                 elif packet.header.fin:
                     expected_syn += 1
                     with open("test", "wb") as f:
