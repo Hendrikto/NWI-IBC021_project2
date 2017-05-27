@@ -128,7 +128,7 @@ class Established(State):
             f.write(output)
         return Server.closed
 
-    def send_ack(self, sock, packet):
+    def send_ack(self, sock):
         global syn_number
         ack_message = BTCPMessage(
             BTCPHeader(
