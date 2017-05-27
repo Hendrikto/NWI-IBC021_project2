@@ -139,6 +139,16 @@ class Established(State):
             )
             sock.sendto(message.to_bytes(), destination_addr)
             syn_number += 1
+        while highest_ack < syn_number:
+            try:
+                message = BTCPMessage.from_bytes(sock.recv(1016))
+            except socket.timeout:
+                print("Established: timed out", file=sys.stderr)
+                continue
+            except ChecksumMismatch:
+                print("Established: checksum mismatch", file=sys.stderr)
+                continue
+            accept_ack(message.header.ack_number)
         fin_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
