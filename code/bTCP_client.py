@@ -121,7 +121,7 @@ class SynSent(State):
 
 class Established(State):
     def run(self, sock: socket.socket):
-        print("Connection established", syn_number, expected_syn)
+        print("Connection established")
         global input_bytes
         global syn_number
         while input_bytes:
