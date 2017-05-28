@@ -32,8 +32,8 @@ with open(args.input, "rb") as input:
     input_bytes = input.read()
 
 destination_addr = (args.destination, args.port)
-expected_syn = None
-syn_number = None
+expected_syn = 0
+syn_number = 0
 stream_id = 0
 highest_ack = 0
 

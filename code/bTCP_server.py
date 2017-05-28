@@ -31,8 +31,8 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-expected_syn = None
-syn_number = None
+expected_syn = 0
+syn_number = 0
 client_address = None
 stream_id = 0
 
