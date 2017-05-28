@@ -72,7 +72,6 @@ class Listen(State):
         synack_message.header.syn = True
         synack_message.header.ack = True
         sock.sendto(synack_message.to_bytes(), client_address)
-        syn_number += 1
         return Server.syn_received
 
 
@@ -80,6 +79,7 @@ class SynReceived(State):
     def run(self, sock: socket.socket):
         sock.settimeout(args.timeout / 1000)
         global expected_syn
+        global syn_number
         try:
             sock.recv(1016)
         except socket.timeout:
@@ -99,6 +99,7 @@ class SynReceived(State):
             sock.sendto(synack_message.to_bytes(), client_address)
             return Server.syn_received
         expected_syn += 1
+        syn_number += 1
         return Server.established
 
 
