@@ -10,9 +10,9 @@ class State(object):
 
 class StateMachine(object):
     def __init__(
-            self,
-            initial_state: State,
-            sock: socket.socket,
+        self,
+        initial_state: State,
+        sock: socket.socket,
     ):
         self.state = initial_state
         self.sock = sock

@@ -17,13 +17,13 @@ class BTCPHeader(object):
         return cls(*struct.unpack(BTCPHeader.struct_format, data))
 
     def __init__(
-            self,
-            id: int,
-            syn: int,
-            ack: int,
-            raw_flags: int,
-            window_size: int,
-            data_length: int=0,
+        self,
+        id: int,
+        syn: int,
+        ack: int,
+        raw_flags: int,
+        window_size: int,
+        data_length: int=0,
     ):
         self.id = id
         self.syn_number = syn

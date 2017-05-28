@@ -22,9 +22,9 @@ class BTCPMessage(object):
             raise ChecksumMismatch()
 
     def __init__(
-            self,
-            header: BTCPHeader,
-            payload: bytes,
+        self,
+        header: BTCPHeader,
+        payload: bytes,
     ):
         if len(payload) > BTCPMessage.payload_size:
             raise AttributeError("Payload is too big.")
