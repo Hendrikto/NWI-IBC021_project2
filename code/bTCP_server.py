@@ -150,28 +150,24 @@ class FinSent(State):
 
 class FinReceived(State):
     def run(self, sock: socket.socket):
-        global syn_number
-        fin_ack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
-        )
-        fin_ack_message.header.ack = True
-        fin_ack_message.header.fin = True
-        sock.sendto(fin_ack_message.to_bytes(), client_address)
-        syn_number += 1
-        while True:
-            try:
-                answer = sock.recv(1016)
-                break
-            except socket.timeout:
-                sock.sendto(fin_ack_message.to_bytes(), client_address)
-                continue
+        try:
+            sock.recv(1016)
+        except socket.timeout:
+            print("FinReceived: timed out")
+            fin_ack_message = BTCPMessage(
+                BTCPHeader(
+                    id=stream_id,
+                    syn=syn_number,
+                    ack=expected_syn,
+                    raw_flags=0,
+                    window_size=args.window,
+                ),
+                b""
+            )
+            fin_ack_message.header.ack = True
+            fin_ack_message.header.fin = True
+            sock.sendto(fin_ack_message.to_bytes(), client_address)
+            return Server.fin_received
         return Server.closed
 
 
