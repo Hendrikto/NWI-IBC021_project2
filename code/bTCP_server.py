@@ -118,7 +118,7 @@ class Established(State):
                     self.send_ack(sock)
                 elif packet.header.fin:
                     expected_syn += 1
-                    with open("test", "wb") as f:
+                    with open(args.output, "wb") as f:
                         f.write(output)
                     return Server.fin_received
             except socket.timeout:
