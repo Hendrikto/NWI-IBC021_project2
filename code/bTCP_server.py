@@ -40,10 +40,12 @@ stream_id = 0
 class Listen(State):
     def run(self, sock: socket.socket):
         sock.setblocking(True)
+        global client_address
+        global expected_syn
+        global stream_id
         global syn_number
         syn_number = 100
         try:
-            global client_address
             data, client_address = sock.recvfrom(1016)
             syn_message = BTCPMessage.from_bytes(data)
         except ChecksumMismatch:
@@ -55,9 +57,7 @@ class Listen(State):
         ):
             print("Listen: wrong message received", file=sys.stderr)
             return Server.listen
-        global expected_syn
         expected_syn = syn_message.header.syn_number + 1
-        global stream_id
         stream_id = syn_message.header.id
         synack_message = BTCPMessage(
             BTCPHeader(
@@ -77,9 +77,9 @@ class Listen(State):
 
 class SynReceived(State):
     def run(self, sock: socket.socket):
-        sock.settimeout(args.timeout / 1000)
         global expected_syn
         global syn_number
+        sock.settimeout(args.timeout / 1000)
         try:
             packet = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
@@ -120,8 +120,8 @@ class SynReceived(State):
 class Established(State):
     def run(self, sock: socket.socket):
         print("Connection established")
-        output = bytes()
         global expected_syn
+        output = bytes()
         while True:
             try:
                 data = sock.recv(1016)

@@ -45,9 +45,9 @@ def accept_ack(ack: int):
 
 class Closed(State):
     def run(self, sock: socket.socket):
+        global stream_id
         global syn_number
         syn_number = 0
-        global stream_id
         stream_id = randint(0, 2 ** 32)
         syn_message = BTCPMessage(
             BTCPHeader(
@@ -66,6 +66,8 @@ class Closed(State):
 
 class SynSent(State):
     def run(self, sock: socket.socket):
+        global expected_syn
+        global syn_number
         try:
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
@@ -85,8 +87,6 @@ class SynSent(State):
             self.send_syn(sock)
             return Client.syn_sent
         accept_ack(synack_message.header.ack_number)
-        global expected_syn
-        global syn_number
         expected_syn = synack_message.header.syn_number + 1
         syn_number += 1
         ack_message = BTCPMessage(
@@ -165,6 +165,7 @@ class Established(State):
 
 class FinSent(State):
     def run(self, sock: socket.socket):
+        global syn_number
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
@@ -185,7 +186,6 @@ class FinSent(State):
             self.send_fin(sock)
             return Client.fin_sent
         accept_ack(finack_message.header.ack_number)
-        global syn_number
         syn_number += 1
         ack_message = BTCPMessage(
             BTCPHeader(
