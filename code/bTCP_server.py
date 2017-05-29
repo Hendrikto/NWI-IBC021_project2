@@ -145,7 +145,56 @@ class Established(State):
 
 
 class FinSent(State):
-    pass
+    def run(self, sock: socket.socket):
+        global expected_syn
+        global syn_number
+        try:
+            finack_message = BTCPMessage.from_bytes(sock.recv(1016))
+        except socket.timeout:
+            print("FinSent: timed out")
+            self.send_fin(sock)
+            return Server.fin_sent
+        except ChecksumMismatch:
+            print("FinSent: checksum mismatch")
+            self.send_fin(sock)
+            return Server.fin_sent
+        if not (
+            finack_message.header.fin and
+            finack_message.header.ack and
+            finack_message.header.id == stream_id
+        ):
+            print("FinSent: Wrong message received")
+            self.send_fin(sock)
+            return Server.fin_sent
+        syn_number += 1
+        expected_syn += 1
+        ack_message = BTCPMessage(
+            BTCPHeader(
+                id=stream_id,
+                syn=syn_number,
+                ack=expected_syn,
+                raw_flags=0,
+                window_size=args.window,
+            ),
+            b""
+        )
+        ack_message.header.ack = True
+        sock.sendto(ack_message.to_bytes(), client_address)
+        return Server.closed
+
+    def send_fin(self, sock):
+        fin_message = BTCPMessage(
+            BTCPHeader(
+                id=stream_id,
+                syn=syn_number,
+                ack=expected_syn,
+                raw_flags=0,
+                window_size=args.window,
+            ),
+            b""
+        )
+        fin_message.header.fin = True
+        sock.sendto(fin_message.to_bytes(), client_address)
 
 
 class FinReceived(State):
