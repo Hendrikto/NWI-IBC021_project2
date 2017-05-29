@@ -101,7 +101,6 @@ class SynSent(State):
         )
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), destination_addr)
-        syn_number += 1
         return Client.established
 
     def send_syn(self, sock):
@@ -173,7 +172,7 @@ class FinSent(State):
             self.send_fin(sock)
             return Client.fin_sent
         except ChecksumMismatch:
-            print("FinSent: checksum mismatch")
+            print("FinSent: checksum mismatch", file=sys.stderr)
             self.send_fin(sock)
             return Client.fin_sent
         if not (
@@ -182,7 +181,7 @@ class FinSent(State):
             finack_message.header.ack and
             finack_message.header.syn_number == expected_syn
         ):
-            print("FinSent: wrong message received")
+            print("FinSent: wrong message received", file=sys.stderr)
             self.send_fin(sock)
             return Client.fin_sent
         accept_ack(finack_message.header.ack_number)

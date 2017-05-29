@@ -214,24 +214,39 @@ class FinSent(State):
 class FinReceived(State):
     def run(self, sock: socket.socket):
         try:
-            sock.recv(1016)
+            ack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
-            print("FinReceived: timed out")
-            fin_ack_message = BTCPMessage(
-                BTCPHeader(
-                    id=stream_id,
-                    syn=syn_number,
-                    ack=expected_syn,
-                    raw_flags=0,
-                    window_size=args.window,
-                ),
-                b""
-            )
-            fin_ack_message.header.ack = True
-            fin_ack_message.header.fin = True
-            sock.sendto(fin_ack_message.to_bytes(), client_address)
+            print("FinReceived: timed out", file=sys.stderr)
+            self.send_finack(sock)
+            return Server.fin_received
+        except ChecksumMismatch:
+            print("FinReceived: checksum mismatch", file=sys.stderr)
+            self.send_finack(sock)
+            return Server.fin_received
+        if not (
+            ack_message.header.ack and
+            ack_message.header.id == stream_id and
+            ack_message.syn_number == expected_syn
+        ):
+            print("FinReceived: wrong message received", file=sys.stderr)
+            self.send_finack(sock)
             return Server.fin_received
         return Server.closed
+
+    def send_finack(self, sock):
+        finack_message = BTCPMessage(
+            BTCPHeader(
+                id=stream_id,
+                syn=syn_number,
+                ack=expected_syn,
+                raw_flags=0,
+                window_size=args.window,
+            ),
+            b""
+        )
+        finack_message.header.ack = True
+        finack_message.header.fin = True
+        sock.sendto(finack_message.to_bytes(), client_address)
 
 
 class Closed(State):
