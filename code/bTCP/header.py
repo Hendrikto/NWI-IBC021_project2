@@ -7,14 +7,14 @@ from pprint import pformat
 
 
 class BTCPHeader(object):
-    struct_format = "!LHHBBH"
+    format = struct.Struct("!LHHBBH")
     syn_mask = 0b001
     ack_mask = 0b010
     fin_mask = 0b100
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        return cls(*struct.unpack(BTCPHeader.struct_format, data))
+        return cls(*BTCPHeader.format.unpack(data))
 
     def __init__(
         self,
@@ -87,8 +87,7 @@ class BTCPHeader(object):
             self._flags &= ~(BTCPHeader.fin_mask)
 
     def to_bytes(self) -> bytes:
-        return struct.pack(
-            BTCPHeader.struct_format,
+        return BTCPHeader.format.pack(
             self.id,
             self.syn_number,
             self.ack_number,
