@@ -221,10 +221,23 @@ class FinReceived(State):
     def run(self, sock: socket.socket):
         try:
             sock.recv(1016)
-            return Client.closed
         except socket.timeout:
             print("FinReceived: timed out", file=sys.stderr)
-            return Client.closed
+            fin_ack_message = BTCPMessage(
+                BTCPHeader(
+                    id=stream_id,
+                    syn=syn_number,
+                    ack=expected_syn,
+                    raw_flags=0,
+                    window_size=0,
+                ),
+                b""
+            )
+            fin_ack_message.header.ack = True
+            fin_ack_message.header.fin = True
+            sock.sendto(fin_ack_message.to_bytes(), destination_addr)
+            return Client.fin_received
+        return Client.closed
 
 
 class Client(StateMachine):
