@@ -226,7 +226,7 @@ class FinReceived(State):
         if not (
             ack_message.header.ack and
             ack_message.header.id == stream_id and
-            ack_message.syn_number == expected_syn
+            ack_message.header.syn_number == expected_syn
         ):
             print("FinReceived: wrong message received", file=sys.stderr)
             self.send_finack(sock)
