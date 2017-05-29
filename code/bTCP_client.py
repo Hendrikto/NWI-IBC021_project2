@@ -101,7 +101,6 @@ class SynSent(State):
         )
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), destination_addr)
-        syn_number += 1
         return Client.established
 
     def send_syn(self, sock):
