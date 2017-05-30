@@ -38,7 +38,7 @@ stream_id = 0
 
 
 class Listen(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         sock.setblocking(True)
         global client_address
         global expected_syn
@@ -76,7 +76,7 @@ class Listen(State):
 
 
 class SynReceived(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         global expected_syn
         global syn_number
         sock.settimeout(args.timeout / 1000)
@@ -118,7 +118,7 @@ class SynReceived(State):
 
 
 class Established(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         print("Connection established")
         global expected_syn
         self.output = bytes()
@@ -173,7 +173,7 @@ class Established(State):
 
 
 class FinSent(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         global expected_syn
         global syn_number
         try:
@@ -226,7 +226,7 @@ class FinSent(State):
 
 
 class FinReceived(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         finack_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
@@ -273,7 +273,7 @@ class Server(StateMachine):
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((args.serverip, args.serverport))
-server = Server(Server.listen, sock)
+server = Server(Server.listen)
 
 try:
     while server.state is not Server.closed:

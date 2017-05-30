@@ -47,7 +47,7 @@ def accept_ack(ack: int):
 
 
 class Closed(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         global stream_id
         global syn_number
         syn_number = 0
@@ -56,7 +56,7 @@ class Closed(State):
 
 
 class SynSent(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         global expected_syn
         global syn_number
         syn_message = BTCPMessage(
@@ -105,7 +105,7 @@ class SynSent(State):
 
 
 class Established(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         print("Connection established")
         global input_bytes
         global syn_number
@@ -151,7 +151,7 @@ class Established(State):
 
 
 class FinSent(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         global syn_number
         fin_message = BTCPMessage(
             BTCPHeader(
@@ -199,7 +199,7 @@ class FinSent(State):
 
 
 class FinReceived(State):
-    def run(self, sock: socket.socket):
+    def run(self):
         finack_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
@@ -243,7 +243,7 @@ class Client(StateMachine):
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(args.timeout / 1000)
 
-client = Client(Client.closed, sock)
+client = Client(Client.closed)
 
 try:
     while input_bytes or client.state is not Client.closed:
