@@ -157,7 +157,7 @@ class Established(State):
                 self.output += self.window[expected_syn]
                 del self.window[expected_syn]
                 expected_syn += 1
-        elif packet.header.syn_number < expected_syn + window_size:
+        elif packet.header.syn_number < expected_syn + args.window:
             print("Packet out of Order, saving in dict.")
             self.window[packet.header.syn_number] = packet.payload
 
