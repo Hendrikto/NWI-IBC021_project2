@@ -153,6 +153,7 @@ class Established(State):
 class FinSent(State):
     def run(self):
         global syn_number
+        global expected_syn
         fin_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
@@ -183,6 +184,7 @@ class FinSent(State):
             return Client.fin_sent
         accept_ack(finack_message.header.ack_number)
         syn_number += 1
+        expected_syn += 1
         ack_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
