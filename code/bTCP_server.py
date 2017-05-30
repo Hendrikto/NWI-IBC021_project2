@@ -145,7 +145,6 @@ class Established(State):
                 with open(args.output, "wb") as f:
                     f.write(self.output)
                 return Server.fin_received
-        return Server.closed
 
     def handle_data_packet(self, sock, packet):
         global expected_syn
