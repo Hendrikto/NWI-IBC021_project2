@@ -127,7 +127,7 @@ class Established(State):
         global input_bytes
         global syn_number
         global timeouts
-        while input_bytes:
+        while input_bytes and syn_number < highest_ack + args.window:
             data = input_bytes[:BTCPMessage.payload_size]
             input_bytes = input_bytes[BTCPMessage.payload_size:]
             message = BTCPMessage(
