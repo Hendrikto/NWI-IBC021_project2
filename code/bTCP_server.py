@@ -121,26 +121,45 @@ class Established(State):
     def run(self, sock: socket.socket):
         print("Connection established")
         global expected_syn
-        output = bytes()
+        self.output = bytes()
+        self.window = {}
         while True:
             try:
                 data = sock.recv(1016)
                 packet = BTCPMessage.from_bytes(data)
-                if not packet.header.fin and not packet.header.ack:
-                    output += packet.payload
-                    expected_syn += 1
-                    self.send_ack(sock)
-                elif packet.header.fin:
-                    expected_syn += 1
-                    with open(args.output, "wb") as f:
-                        f.write(output)
-                    return Server.fin_received
             except socket.timeout:
                 print("Established: timeout error", file=sys.stderr)
-                break
+                continue
             except ChecksumMismatch:
                 print("Established: ChecksumMismatch", file=sys.stderr)
+                continue
+            if packet.header._flags == 0:
+                self.handle_data_packet(sock, packet)
+                self.send_ack(sock)
+            elif (
+                packet.header.fin and
+                packet.header.syn_number == expected_syn
+            ):
+                expected_syn += 1
+                self.send_finack(sock)
+                with open(args.output, "wb") as f:
+                    f.write(self.output)
+                return Server.fin_received
         return Server.closed
+
+    def handle_data_packet(self, sock, packet):
+        global expected_syn
+        if packet.header.syn_number == expected_syn:
+            self.output += packet.payload
+            expected_syn += 1
+            while expected_syn in self.window:
+                print("Re-assemble packet")
+                self.output += self.window[expected_syn]
+                del self.window[expected_syn]
+                expected_syn += 1
+        elif packet.header.syn_number < expected_syn + window_size:
+            print("Packet out of Order, saving in dict.")
+            self.window[packet.header.syn_number] = packet.payload
 
     def send_ack(self, sock):
         global syn_number
