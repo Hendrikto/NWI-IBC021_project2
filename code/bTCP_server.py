@@ -300,7 +300,8 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((args.serverip, args.serverport))
 server = Server(Server.listen, sock)
 
-while server.state is not Server.closed:
-    server.run()
-
-sock.close()
+try:
+    while server.state is not Server.closed:
+        server.run()
+except:
+    sock.close()
