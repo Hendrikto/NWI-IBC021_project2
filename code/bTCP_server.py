@@ -59,6 +59,13 @@ class Listen(State):
             return Server.listen
         expected_syn = syn_message.header.syn_number + 1
         stream_id = syn_message.header.id
+        return Server.syn_received
+
+
+class SynReceived(State):
+    def run(self):
+        global expected_syn
+        global syn_number
         synack_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
@@ -72,22 +79,13 @@ class Listen(State):
         synack_message.header.syn = True
         synack_message.header.ack = True
         sock.sendto(synack_message.to_bytes(), client_address)
-        return Server.syn_received
-
-
-class SynReceived(State):
-    def run(self):
-        global expected_syn
-        global syn_number
         sock.settimeout(args.timeout / 1000)
         try:
             packet = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("SynRecv: timeout error", file=sys.stderr)
-            self.send_synack_message(sock)
             return Server.syn_received
         except ChecksumMismatch:
-            self.send_synack_message(sock)
             print("SynRecv: Checksum error", file=sys.stderr)
             return Server.syn_received
         if not (
@@ -98,23 +96,6 @@ class SynReceived(State):
             return Server.syn_received
         syn_number += 1
         return Server.established
-
-    def send_synack_message(self, sock):
-        global expected_syn
-        global syn_number
-        synack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
-        )
-        synack_message.header.syn = True
-        synack_message.header.ack = True
-        sock.sendto(synack_message.to_bytes(), client_address)
 
 
 class Established(State):
