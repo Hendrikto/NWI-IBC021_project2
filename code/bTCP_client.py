@@ -52,6 +52,13 @@ class Closed(State):
         global syn_number
         syn_number = 0
         stream_id = randint(0, 2 ** 32)
+        return Client.syn_sent
+
+
+class SynSent(State):
+    def run(self, sock: socket.socket):
+        global expected_syn
+        global syn_number
         syn_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
@@ -64,22 +71,13 @@ class Closed(State):
         )
         syn_message.header.syn = True
         sock.sendto(syn_message.to_bytes(), destination_addr)
-        return Client.syn_sent
-
-
-class SynSent(State):
-    def run(self, sock: socket.socket):
-        global expected_syn
-        global syn_number
         try:
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("SynSent: timed out", file=sys.stderr)
-            self.send_syn(sock)
             return Client.syn_sent
         except ChecksumMismatch:
             print("SynSent: checksum mismatch", file=sys.stderr)
-            self.send_syn(sock)
             return Client.syn_sent
         if not (
             synack_message.header.id == stream_id and
@@ -87,7 +85,6 @@ class SynSent(State):
             synack_message.header.ack
         ):
             print("SynSent: wrong message received", file=sys.stderr)
-            self.send_syn(sock)
             return Client.syn_sent
         accept_ack(synack_message.header.ack_number)
         expected_syn = synack_message.header.syn_number + 1
@@ -105,20 +102,6 @@ class SynSent(State):
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), destination_addr)
         return Client.established
-
-    def send_syn(self, sock):
-        syn_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=0,
-                raw_flags=0,
-                window_size=0,
-            ),
-            b""
-        )
-        syn_message.header.syn = True
-        sock.sendto(syn_message.to_bytes(), destination_addr)
 
 
 class Established(State):
