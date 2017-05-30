@@ -157,6 +157,21 @@ class Established(State):
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), client_address)
 
+    def send_finack(self, sock):
+        finack_message = BTCPMessage(
+            BTCPHeader(
+                id=stream_id,
+                syn=syn_number,
+                ack=expected_syn,
+                raw_flags=0,
+                window_size=args.window,
+            ),
+            b""
+        )
+        finack_message.header.ack = True
+        finack_message.header.fin = True
+        sock.sendto(finack_message.to_bytes(), client_address)
+
 
 class FinSent(State):
     def run(self, sock: socket.socket):
