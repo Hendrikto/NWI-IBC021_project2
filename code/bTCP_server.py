@@ -152,12 +152,10 @@ class Established(State):
             self.output += packet.payload
             expected_syn += 1
             while expected_syn in self.window:
-                print("Re-assemble packet")
                 self.output += self.window[expected_syn]
                 del self.window[expected_syn]
                 expected_syn += 1
         elif packet.header.syn_number < expected_syn + args.window:
-            print("Packet out of Order, saving in dict.")
             self.window[packet.header.syn_number] = packet.payload
 
     def send_ack(self, sock):
