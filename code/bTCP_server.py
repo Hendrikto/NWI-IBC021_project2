@@ -114,8 +114,8 @@ class Established(State):
                 print("Established: ChecksumMismatch", file=sys.stderr)
                 continue
             if packet.header._flags == 0:
-                self.handle_data_packet(sock, packet)
-                self.send_ack(sock)
+                self.handle_data_packet(packet)
+                self.send_ack()
             elif (
                 packet.header.fin and
                 packet.header.syn_number == expected_syn
@@ -125,7 +125,7 @@ class Established(State):
                     f.write(self.output)
                 return Server.fin_received
 
-    def handle_data_packet(self, sock, packet):
+    def handle_data_packet(self, packet):
         global expected_syn
         if packet.header.syn_number == expected_syn:
             self.output += packet.payload
@@ -137,7 +137,7 @@ class Established(State):
         elif packet.header.syn_number < expected_syn + args.window:
             self.window[packet.header.syn_number] = packet.payload
 
-    def send_ack(self, sock):
+    def send_ack(self):
         global syn_number
         ack_message = BTCPMessage(
             BTCPHeader(
