@@ -244,7 +244,9 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(args.timeout / 1000)
 
 client = Client(Client.closed, sock)
-while input_bytes or client.state is not Client.closed:
-    client.run()
 
-sock.close()
+try:
+    while input_bytes or client.state is not Client.closed:
+        client.run()
+finally:
+    sock.close()
