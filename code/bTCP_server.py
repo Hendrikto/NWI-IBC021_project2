@@ -300,5 +300,5 @@ server = Server(Server.listen, sock)
 try:
     while server.state is not Server.closed:
         server.run()
-except:
+finally:
     sock.close()
