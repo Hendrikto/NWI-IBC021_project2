@@ -1,5 +1,6 @@
 #!/usr/local/bin/python3
 import argparse
+from datetime import datetime
 import socket
 from random import randint
 import sys
@@ -36,6 +37,8 @@ expected_syn = 0
 syn_number = 0
 stream_id = 0
 highest_ack = 0
+timeouts = set()
+messages = {}
 
 
 def accept_ack(ack: int):
@@ -123,6 +126,7 @@ class Established(State):
         print("Connection established")
         global input_bytes
         global syn_number
+        global timeouts
         while input_bytes:
             data = input_bytes[:BTCPMessage.payload_size]
             input_bytes = input_bytes[BTCPMessage.payload_size:]
@@ -137,17 +141,29 @@ class Established(State):
                 data
             )
             sock.sendto(message.to_bytes(), destination_addr)
+            timeouts.add(syn_number)
+            messages[syn_number] = (message, datetime.now().timestamp())
             syn_number += 1
         while highest_ack < syn_number:
             try:
                 message = BTCPMessage.from_bytes(sock.recv(1016))
             except socket.timeout:
                 print("Established: timed out", file=sys.stderr)
-                continue
+                break
             except ChecksumMismatch:
                 print("Established: checksum mismatch", file=sys.stderr)
                 continue
+            timeouts -= {*range(highest_ack, message.header.ack_number)}
             accept_ack(message.header.ack_number)
+        for syn_nr in timeouts:
+            message, timestamp = messages[syn_nr]
+            now = datetime.now().timestamp()
+            if now - timestamp > args.timeout / 1000:
+                message.header.ack_number = expected_syn
+                sock.sendto(message.to_bytes(), destination_addr)
+                messages[syn_nr] = (message, now)
+        if highest_ack != syn_number:
+            return Client.established
         fin_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
