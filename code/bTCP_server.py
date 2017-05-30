@@ -125,8 +125,7 @@ class Established(State):
         self.window = {}
         while True:
             try:
-                data = sock.recv(1016)
-                packet = BTCPMessage.from_bytes(data)
+                packet = BTCPMessage.from_bytes(sock.recv(1016))
             except socket.timeout:
                 print("Established: timeout error", file=sys.stderr)
                 continue
