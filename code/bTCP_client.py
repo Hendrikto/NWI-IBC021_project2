@@ -110,6 +110,7 @@ class SynSent(State):
 class Established(State):
     def run(self):
         print("Connection established")
+        global expected_syn
         global input_bytes
         global syn_number
         global timeouts
@@ -143,6 +144,9 @@ class Established(State):
                 continue
             timeouts -= {*range(highest_ack, message.header.ack_number)}
             accept_ack(message.header.ack_number)
+            if message.header.fin:
+                expected_syn += 1
+                return Client.fin_received
         for syn_nr in timeouts:
             message, timestamp = messages[syn_nr]
             now = datetime.now().timestamp()
