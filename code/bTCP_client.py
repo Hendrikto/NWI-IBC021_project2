@@ -37,6 +37,7 @@ expected_syn = 0
 syn_number = 0
 stream_id = 0
 highest_ack = 0
+server_window = 0
 timeouts = set()
 messages = {}
 
@@ -58,6 +59,7 @@ class Closed(State):
 class SynSent(State):
     def run(self):
         global expected_syn
+        global server_window
         global syn_number
         syn_message = BTCPMessage(
             BTCPHeader(
@@ -86,6 +88,7 @@ class SynSent(State):
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return Client.syn_sent
+        server_window = synack_message.header.window_size
         accept_ack(synack_message.header.ack_number)
         expected_syn = synack_message.header.syn_number + 1
         syn_number += 1
@@ -110,7 +113,7 @@ class Established(State):
         global input_bytes
         global syn_number
         global timeouts
-        while input_bytes and syn_number < highest_ack + args.window:
+        while input_bytes and syn_number < highest_ack + server_window:
             data = input_bytes[:BTCPMessage.payload_size]
             input_bytes = input_bytes[BTCPMessage.payload_size:]
             message = BTCPMessage(
