@@ -44,6 +44,10 @@ class BTCPHeader(object):
         )
 
     @property
+    def no_flags(self) -> bool:
+        return self._flags == 0
+
+    @property
     def data_length(self):
         return self._data_length
 

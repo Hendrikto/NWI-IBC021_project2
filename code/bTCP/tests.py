@@ -24,16 +24,21 @@ class BTCPHeaderTest(unittest.TestCase):
 
     def test_flags(self):
         header = BTCPHeader(0, 0, 0, 0, 0)
+        self.assertTrue(header.no_flags)
         header.syn = True
         self.assertEqual(header._flags, 1)
+        self.assertFalse(header.no_flags)
         header.ack = True
         self.assertEqual(header._flags, 3)
+        self.assertFalse(header.no_flags)
         header.fin = True
         self.assertEqual(header._flags, 7)
+        self.assertFalse(header.no_flags)
         header.syn = False
         header.ack = False
         header.fin = False
         self.assertEqual(header._flags, 0)
+        self.assertTrue(header.no_flags)
 
 
 class BTCPMessageTest(unittest.TestCase):
