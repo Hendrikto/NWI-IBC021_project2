@@ -238,12 +238,17 @@ class FinReceived(State):
         return Client.closed
 
 
+class Finished(State):
+    pass
+
+
 class Client(StateMachine):
     closed = Closed()
     syn_sent = SynSent()
     established = Established()
     fin_sent = FinSent()
     fin_received = FinReceived()
+    finished = Finished()
 
 
 # UDP socket which will transport your bTCP packets
