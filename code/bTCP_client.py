@@ -202,7 +202,7 @@ class FinSent(State):
         )
         ack_message.header.ack = True
         sock.sendto(ack_message.to_bytes(), destination_addr)
-        return Client.closed
+        return Client.finished
 
 
 class FinReceived(State):
@@ -235,7 +235,7 @@ class FinReceived(State):
         ):
             print("FinReceived: wrong message received", file=sys.stderr)
             return Client.fin_received
-        return Client.closed
+        return Client.finished
 
 
 class Finished(State):
@@ -258,7 +258,7 @@ sock.settimeout(args.timeout / 1000)
 client = Client(Client.closed)
 
 try:
-    while input_bytes or client.state is not Client.closed:
+    while client.state is not Client.finished:
         client.run()
 finally:
     sock.close()
