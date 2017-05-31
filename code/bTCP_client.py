@@ -67,7 +67,7 @@ class SynSent(State):
                 syn=syn_number,
                 ack=0,
                 raw_flags=0,
-                window_size=0,
+                window_size=args.window,
             ),
             b""
         )
@@ -98,7 +98,7 @@ class SynSent(State):
                 syn=syn_number,
                 ack=expected_syn,
                 raw_flags=0,
-                window_size=0,
+                window_size=args.window,
             ),
             b""
         )
@@ -122,7 +122,7 @@ class Established(State):
                     syn=syn_number,
                     ack=expected_syn,
                     raw_flags=0,
-                    window_size=0,
+                    window_size=args.window,
                 ),
                 data
             )
@@ -163,7 +163,7 @@ class FinSent(State):
                 syn=syn_number,
                 ack=expected_syn,
                 raw_flags=0,
-                window_size=0,
+                window_size=args.window,
             ),
             b""
         )
@@ -194,7 +194,7 @@ class FinSent(State):
                 syn=syn_number,
                 ack=expected_syn,
                 raw_flags=0,
-                window_size=0,
+                window_size=args.window,
             ),
             b""
         )
@@ -211,7 +211,7 @@ class FinReceived(State):
                 syn=syn_number,
                 ack=expected_syn,
                 raw_flags=0,
-                window_size=0,
+                window_size=args.window,
             ),
             b""
         )
