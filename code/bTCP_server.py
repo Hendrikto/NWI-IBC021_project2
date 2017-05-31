@@ -3,6 +3,7 @@ import argparse
 import socket
 
 import sys
+import shutil
 
 from bTCP.exceptions import ChecksumMismatch
 from bTCP.message import BTCPMessage
@@ -115,6 +116,8 @@ class Established(State):
                 continue
             if packet.header.no_flags:
                 self.handle_data_packet(packet)
+                if (shutil.disk_usage("/").free < len(self.output)):
+                    return Server.fin_sent
                 self.send_ack()
             elif (
                 packet.header.fin and
