@@ -113,7 +113,7 @@ class Established(State):
             except ChecksumMismatch:
                 print("Established: ChecksumMismatch", file=sys.stderr)
                 continue
-            if packet.header._flags == 0:
+            if packet.header.no_flags:
                 self.handle_data_packet(packet)
                 self.send_ack()
             elif (
