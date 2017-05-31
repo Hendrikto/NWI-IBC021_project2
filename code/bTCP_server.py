@@ -114,6 +114,8 @@ class Established(State):
             except ChecksumMismatch:
                 print("Established: ChecksumMismatch", file=sys.stderr)
                 continue
+            if packet.header.id != stream_id:
+                continue
             if packet.header.no_flags:
                 self.handle_data_packet(packet)
                 if (shutil.disk_usage("/").free < len(self.output)):
