@@ -52,3 +52,43 @@ class BTCPMessage(object):
         return header_bytes + struct.pack("!L", zlib.crc32(
             header_bytes + self.payload
         )) + self.payload.ljust(BTCPMessage.payload_size, b"\0")
+
+
+class MessageFactory(object):
+    def __init__(
+        self,
+        stream_id: int,
+        window_size: int,
+    ):
+        self.stream_id = stream_id
+        self.window_size = window_size
+
+    def syn_message(
+        self,
+        syn_number: int,
+        ack_number: int,
+    ):
+        header = BTCPHeader(
+            id=self.stream_id,
+            syn=syn_number,
+            ack=ack_number,
+            raw_flags=0,
+            window_size=self.window_size,
+        )
+        header.syn = True
+        return BTCPMessage(header, b"")
+
+    def ack_message(
+        self,
+        syn_number: int,
+        ack_number: int,
+    ):
+        header = BTCPHeader(
+            id=self.stream_id,
+            syn=syn_number,
+            ack=ack_number,
+            raw_flags=0,
+            window_size=self.window_size,
+        )
+        header.ack = True
+        return BTCPMessage(header, b"")
