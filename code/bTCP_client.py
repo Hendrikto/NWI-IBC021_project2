@@ -139,6 +139,8 @@ class Established(State):
             except ChecksumMismatch:
                 print("Established: checksum mismatch", file=sys.stderr)
                 continue
+            if message.header.id != stream_id:
+                continue
             timeouts -= {*range(highest_ack, message.header.ack_number)}
             accept_ack(message.header.ack_number)
         for syn_nr in timeouts:
