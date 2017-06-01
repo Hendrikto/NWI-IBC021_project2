@@ -172,18 +172,10 @@ class FinSent(State):
         accept_ack(finack_message.header.ack_number)
         syn_number += 1
         expected_syn += 1
-        ack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.ack_message(syn_number, expected_syn).to_bytes(),
+            destination_addr,
         )
-        ack_message.header.ack = True
-        sock.sendto(ack_message.to_bytes(), destination_addr)
         return Client.finished
 
 
