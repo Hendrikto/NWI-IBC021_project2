@@ -6,7 +6,7 @@ from random import randint
 import sys
 
 from bTCP.exceptions import ChecksumMismatch
-from bTCP.message import BTCPMessage
+from bTCP.message import BTCPMessage, MessageFactory
 from bTCP.header import BTCPHeader
 from bTCP.state_machine import State, StateMachine
 
@@ -40,6 +40,7 @@ highest_ack = 0
 server_window = 0
 timeouts = set()
 messages = {}
+factory = None
 
 
 def accept_ack(ack: int):
@@ -49,10 +50,12 @@ def accept_ack(ack: int):
 
 class Closed(State):
     def run(self):
+        global factory
         global stream_id
         global syn_number
         syn_number = 0
         stream_id = randint(0, 2 ** 32)
+        factory = MessageFactory(stream_id, args.window)
         return Client.syn_sent
 
 
@@ -61,18 +64,10 @@ class SynSent(State):
         global expected_syn
         global server_window
         global syn_number
-        syn_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=0,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.syn_message(syn_number, expected_syn).to_bytes(),
+            destination_addr,
         )
-        syn_message.header.syn = True
-        sock.sendto(syn_message.to_bytes(), destination_addr)
         try:
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
@@ -92,18 +87,10 @@ class SynSent(State):
         accept_ack(synack_message.header.ack_number)
         expected_syn = synack_message.header.syn_number + 1
         syn_number += 1
-        ack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.ack_message(syn_number, expected_syn).to_bytes(),
+            destination_addr,
         )
-        ack_message.header.ack = True
-        sock.sendto(ack_message.to_bytes(), destination_addr)
         return Client.established
 
 
