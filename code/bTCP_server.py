@@ -216,7 +216,7 @@ class FinReceived(State):
     def run(self):
         if self.retries <= 0:
             print("FinReceived: timeout limit reached.", file=sys.stderr)
-        return Server.closed
+            return Server.closed
         self.retries -= 1
         finack_message = BTCPMessage(
             BTCPHeader(
