@@ -119,6 +119,7 @@ class Established(State):
             if packet.header.no_flags:
                 self.handle_data_packet(packet)
                 if shutil.disk_usage(".").free < len(self.output):
+                    Server.fin_sent.retries = 10
                     return Server.fin_sent
                 self.send_ack()
             elif (
@@ -128,6 +129,7 @@ class Established(State):
                 expected_syn += 1
                 with open(args.output, "wb") as f:
                     f.write(self.output)
+                Server.fin_received.retries = 10
                 return Server.fin_received
 
     def handle_data_packet(self, packet):
@@ -160,6 +162,10 @@ class Established(State):
 
 class FinSent(State):
     def run(self):
+        if self.retries <= 0:
+            print("FinSent: timeout limit reached.", file=sys.stderr)
+            return Server.close
+        self.retries -= 1
         global expected_syn
         global syn_number
         fin_message = BTCPMessage(
@@ -208,6 +214,10 @@ class FinSent(State):
 
 class FinReceived(State):
     def run(self):
+        if self.retries <= 0:
+            print("FinReceived: timeout limit reached.", file=sys.stderr)
+        return Server.close
+        self.retries -= 1
         finack_message = BTCPMessage(
             BTCPHeader(
                 id=stream_id,
