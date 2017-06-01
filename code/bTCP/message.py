@@ -80,7 +80,7 @@ class MessageFactory(object):
         self,
         syn_number: int,
         ack_number: int,
-    ):
+    ) -> BTCPMessage:
         header = self.header(syn_number, ack_number)
         header.syn = True
         return BTCPMessage(header, b"")
@@ -89,7 +89,7 @@ class MessageFactory(object):
         self,
         syn_number: int,
         ack_number: int,
-    ):
+    ) -> BTCPMessage:
         header = self.header(syn_number, ack_number)
         header.ack = True
         return BTCPMessage(header, b"")
@@ -99,5 +99,5 @@ class MessageFactory(object):
         syn_number: int,
         ack_number: int,
         payload: bytes = b"",
-    ):
+    ) -> BTCPMessage:
         return BTCPMessage(self.header(syn_number, ack_number), payload)
