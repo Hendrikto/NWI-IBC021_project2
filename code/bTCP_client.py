@@ -104,16 +104,7 @@ class Established(State):
         while input_bytes and syn_number < highest_ack + server_window:
             data = input_bytes[:BTCPMessage.payload_size]
             input_bytes = input_bytes[BTCPMessage.payload_size:]
-            message = BTCPMessage(
-                BTCPHeader(
-                    id=stream_id,
-                    syn=syn_number,
-                    ack=expected_syn,
-                    raw_flags=0,
-                    window_size=args.window,
-                ),
-                data
-            )
+            message = factory.message(syn_number, expected_syn, data)
             sock.sendto(message.to_bytes(), destination_addr)
             timeouts.add(syn_number)
             messages[syn_number] = (message, datetime.now().timestamp())

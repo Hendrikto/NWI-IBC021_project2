@@ -93,3 +93,11 @@ class MessageFactory(object):
         header = self.header(syn_number, ack_number)
         header.ack = True
         return BTCPMessage(header, b"")
+
+    def message(
+        self,
+        syn_number: int,
+        ack_number: int,
+        payload: bytes = b"",
+    ):
+        return BTCPMessage(self.header(syn_number, ack_number), payload)
