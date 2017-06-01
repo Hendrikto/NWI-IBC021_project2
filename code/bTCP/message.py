@@ -63,18 +63,25 @@ class MessageFactory(object):
         self.stream_id = stream_id
         self.window_size = window_size
 
-    def syn_message(
+    def header(
         self,
         syn_number: int,
         ack_number: int,
-    ):
-        header = BTCPHeader(
+    ) -> BTCPHeader:
+        return BTCPHeader(
             id=self.stream_id,
             syn=syn_number,
             ack=ack_number,
             raw_flags=0,
             window_size=self.window_size,
         )
+
+    def syn_message(
+        self,
+        syn_number: int,
+        ack_number: int,
+    ):
+        header = self.header(syn_number, ack_number)
         header.syn = True
         return BTCPMessage(header, b"")
 
@@ -83,12 +90,6 @@ class MessageFactory(object):
         syn_number: int,
         ack_number: int,
     ):
-        header = BTCPHeader(
-            id=self.stream_id,
-            syn=syn_number,
-            ack=ack_number,
-            raw_flags=0,
-            window_size=self.window_size,
-        )
+        header = self.header(syn_number, ack_number)
         header.ack = True
         return BTCPMessage(header, b"")
