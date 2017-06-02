@@ -113,12 +113,6 @@ class TestbTCPFramework(unittest.TestCase):
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
 
-# def test_command(self):
-#     # command=['dir','.']
-#     out = run_command_with_output("dir .")
-#     print(out)
-
-
 if __name__ == "__main__":
     # Parse command line arguments
     import argparse
