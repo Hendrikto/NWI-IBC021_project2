@@ -134,4 +134,4 @@ if __name__ == "__main__":
     sys.argv[1:] = extra
 
     # Start test suite
-    unittest.main()
+    unittest.main(verbosity=2)
