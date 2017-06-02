@@ -61,83 +61,56 @@ class TestbTCPFramework(unittest.TestCase):
         """reliability over network with bit flips
         (which sometimes results in lower layer packet loss)"""
         # setup environment
-        run_command(netem_change.format("corrupt 1%"))
+        run_command_blocking(netem_change.format("corrupt 1%"))
 
         # launch localhost client connecting to server
-
-        # client sends content to server
-
-        # server receives content from client
-
-        # content received by server matches the content sent by client
+        run_command_blocking("python3 bTCP_client.py")
+        self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_duplicates_network(self):
         """reliability over network with duplicate packets"""
         # setup environment
-        run_command(netem_change.format("duplicate 10%"))
+        run_command_blocking(netem_change.format("duplicate 10%"))
 
-        # launch localhost client connecting to server
-
-        # client sends content to server
-
-        # server receives content from client
-
-        # content received by server matches the content sent by client
+        run_command_blocking("python3 bTCP_client.py")
+        self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_lossy_network(self):
         """reliability over network with packet loss"""
         # setup environment
-        run_command(netem_change.format("loss 10% 25%"))
+        run_command_blocking(netem_change.format("loss 10% 25%"))
 
-        # launch localhost client connecting to server
-
-        # client sends content to server
-
-        # server receives content from client
-
-        # content received by server matches the content sent by client
+        run_command_blocking("python3 bTCP_client.py")
+        self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_reordering_network(self):
         """reliability over network with packet reordering"""
         # setup environment
-        run_command(netem_change.format("delay 20ms reorder 25% 50%"))
+        run_command_blocking(netem_change.format("delay 20ms reorder 25% 50%"))
 
-        # launch localhost client connecting to server
-
-        # client sends content to server
-
-        # server receives content from client
-
-        # content received by server matches the content sent by client
+        run_command_blocking("python3 bTCP_client.py")
+        self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_delayed_network(self):
         """reliability over network with delay relative to the timeout value"""
         # setup environment
-        run_command(netem_change.format("delay " + str(timeout) + "ms 20ms"))
+        run_command_blocking(
+            netem_change.format("delay " + str(timeout) + "ms 20ms")
+        )
 
-        # launch localhost client connecting to server
-
-        # client sends content to server
-
-        # server receives content from client
-
-        # content received by server matches the content sent by client
+        run_command_blocking("python3 bTCP_client.py")
+        self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_allbad_network(self):
         """reliability over network with all of the above problems"""
 
         # setup environment
-        run_command(netem_change.format(
+        run_command_blocking(netem_change.format(
             "corrupt 1% duplicate 10% loss 10% 25% delay 20ms reorder 25% 50%"
         ))
 
-        # launch localhost client connecting to server
-
-        # client sends content to server
-
-        # server receives content from client
-
-        # content received by server matches the content sent by client
+        run_command_blocking("python3 bTCP_client.py")
+        self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
 
 # def test_command(self):
