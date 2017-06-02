@@ -106,3 +106,23 @@ class MessageFactory(object):
         message = self.message(syn_number, ack_number)
         message.header.fin = True
         return message
+
+    def synack_message(
+        self,
+        syn_number: int,
+        ack_number: int,
+    ) -> BTCPMessage:
+        message = self.message(syn_number, ack_number)
+        message.header.syn = True
+        message.header.ack = True
+        return message
+
+    def finack_message(
+        self,
+        syn_number: int,
+        ack_number: int,
+    ) -> BTCPMessage:
+        message = self.message(syn_number, ack_number)
+        message.header.fin = True
+        message.header.ack = True
+        return message
