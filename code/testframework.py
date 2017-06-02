@@ -1,6 +1,8 @@
 import sys
 import unittest
 
+import subprocess
+
 timeout = 100
 winsize = 100
 intf = "lo"
@@ -9,49 +11,20 @@ netem_change = "sudo tc qdisc change dev {} root netem {}".format(intf, "{}")
 netem_del = "sudo tc qdisc del dev {} root netem".format(intf)
 
 
-def run_command_with_output(command, input=None, cwd=None, shell=True):
-    """Run command and retrieve output"""
-    import subprocess
-    try:
-        process = subprocess.Popen(
-            command, cwd=cwd, shell=shell, stdout=subprocess.PIPE,
-            stdin=subprocess.PIPE
-        )
-    except:
-        print("problem running command:\n\t", str(command))
-
-    # No pipes set for stdin/stdout/stdout streams so does effectively only
-    # just wait for process ends  (same as process.wait()
-    [stdoutdata, stderrdata] = process.communicate(input)
-
-    if process.returncode:
-        print(stderrdata)
-        print(
-            "problem running command:\n\t", str(command), process.returncode
-        )
-
-    return stdoutdata
-
-
 def run_command(command, cwd=None, shell=True):
     """Run command with no output piping"""
-    import subprocess
-    process = None
     try:
-        process = subprocess.Popen(command, shell=shell, cwd=cwd)
-        print(str(process))
-    except Exception as inst:
-        print(
-            "1. problem running command:\n\t", str(command), "\n problem:",
-            str(inst)
-        )
+        return subprocess.Popen(command, shell=shell, cwd=cwd)
+    except Exception as ex:
+        print("problem running command:", command, "\n\tproblem:", ex)
 
-    process.communicate()  # wait for the process to end
 
+def run_command_blocking(command, cwd=None, shell=True):
+    process = run_command(command, cwd, shell)
+    process.wait()
     if process.returncode:
-        print(
-            "2. problem running command:\n\t", str(command), process.returncode
-        )
+        print("problem running command:", command)
+        print("\treturn code:", process.returncode)
 
 
 class TestbTCPFramework(unittest.TestCase):
