@@ -33,6 +33,7 @@ class TestbTCPFramework(unittest.TestCase):
     """Test cases for bTCP"""
 
     input_file = "tmp.file"
+    start_client = "python3 bTCP_client.py -i" + input_file
 
     def setUp(self):
         """Prepare for testing"""
@@ -54,7 +55,7 @@ class TestbTCPFramework(unittest.TestCase):
         """reliability over an ideal framework"""
         # setup environment (nothing to set)
 
-        run_command_blocking("python3 bTCP_client.py")
+        run_command_blocking(TestbTCPFramework.start_client)
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_flipping_network(self):
@@ -63,8 +64,7 @@ class TestbTCPFramework(unittest.TestCase):
         # setup environment
         run_command_blocking(netem_change.format("corrupt 1%"))
 
-        # launch localhost client connecting to server
-        run_command_blocking("python3 bTCP_client.py")
+        run_command_blocking(TestbTCPFramework.start_client)
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_duplicates_network(self):
@@ -72,7 +72,7 @@ class TestbTCPFramework(unittest.TestCase):
         # setup environment
         run_command_blocking(netem_change.format("duplicate 10%"))
 
-        run_command_blocking("python3 bTCP_client.py")
+        run_command_blocking(TestbTCPFramework.start_client)
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_lossy_network(self):
@@ -80,7 +80,7 @@ class TestbTCPFramework(unittest.TestCase):
         # setup environment
         run_command_blocking(netem_change.format("loss 10% 25%"))
 
-        run_command_blocking("python3 bTCP_client.py")
+        run_command_blocking(TestbTCPFramework.start_client)
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_reordering_network(self):
@@ -88,7 +88,7 @@ class TestbTCPFramework(unittest.TestCase):
         # setup environment
         run_command_blocking(netem_change.format("delay 20ms reorder 25% 50%"))
 
-        run_command_blocking("python3 bTCP_client.py")
+        run_command_blocking(TestbTCPFramework.start_client)
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_delayed_network(self):
@@ -98,7 +98,7 @@ class TestbTCPFramework(unittest.TestCase):
             netem_change.format("delay " + str(timeout) + "ms 20ms")
         )
 
-        run_command_blocking("python3 bTCP_client.py")
+        run_command_blocking(TestbTCPFramework.start_client)
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_allbad_network(self):
@@ -109,7 +109,7 @@ class TestbTCPFramework(unittest.TestCase):
             "corrupt 1% duplicate 10% loss 10% 25% delay 20ms reorder 25% 50%"
         ))
 
-        run_command_blocking("python3 bTCP_client.py")
+        run_command_blocking(TestbTCPFramework.start_client)
         self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
 
