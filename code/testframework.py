@@ -45,7 +45,7 @@ class TestbTCPFramework(unittest.TestCase):
         run_command_blocking(netem_del)
         os.remove("out.file")
 
-        # close server
+        self.server_process.wait()
 
     def test_ideal_network(self):
         """reliability over an ideal framework"""
