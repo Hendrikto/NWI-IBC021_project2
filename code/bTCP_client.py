@@ -141,18 +141,10 @@ class FinSent(State):
     def run(self):
         global syn_number
         global expected_syn
-        fin_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.fin_message(syn_number, expected_syn).to_bytes(),
+            destination_addr,
         )
-        fin_message.header.fin = True
-        sock.sendto(fin_message.to_bytes(), destination_addr)
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
