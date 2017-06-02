@@ -55,7 +55,7 @@ class TestbTCPFramework(unittest.TestCase):
         # setup environment (nothing to set)
 
         run_command_blocking("python3 bTCP_client.py")
-        filecmp.cmp(TestbTCPFramework.input_file, "out.file")
+        self.assertTrue(filecmp.cmp(TestbTCPFramework.input_file, "out.file"))
 
     def test_flipping_network(self):
         """reliability over network with bit flips
