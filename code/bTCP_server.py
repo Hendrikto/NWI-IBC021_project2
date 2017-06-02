@@ -183,17 +183,17 @@ class FinSent(State):
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
-            print("FinSent: timed out")
+            print("FinSent: timed out", file=sys.stderr)
             return Server.fin_sent
         except ChecksumMismatch:
-            print("FinSent: checksum mismatch")
+            print("FinSent: checksum mismatch", file=sys.stderr)
             return Server.fin_sent
         if not (
             finack_message.header.fin and
             finack_message.header.ack and
             finack_message.header.id == stream_id
         ):
-            print("FinSent: Wrong message received")
+            print("FinSent: wrong message received", file=sys.stderr)
             return Server.fin_sent
         syn_number += 1
         expected_syn += 1
