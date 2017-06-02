@@ -9,10 +9,9 @@ netem_change = "sudo tc qdisc change dev {} root netem {}".format(intf, "{}")
 netem_del = "sudo tc qdisc del dev {} root netem".format(intf)
 
 
-def run_command_with_output(cmdstr, input=None, cwd=None, shell=True):
+def run_command_with_output(command, input=None, cwd=None, shell=True):
     """Run command and retrieve output"""
     import subprocess
-    command = cmdstr.split()
     try:
         process = subprocess.Popen(
             command, cwd=cwd, shell=shell, stdout=subprocess.PIPE,
