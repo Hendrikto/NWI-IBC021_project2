@@ -63,17 +63,21 @@ class MessageFactory(object):
         self.stream_id = stream_id
         self.window_size = window_size
 
-    def header(
+    def message(
         self,
         syn_number: int,
         ack_number: int,
-    ) -> BTCPHeader:
-        return BTCPHeader(
-            id=self.stream_id,
-            syn=syn_number,
-            ack=ack_number,
-            raw_flags=0,
-            window_size=self.window_size,
+        payload: bytes=b"",
+    ) -> BTCPMessage:
+        return BTCPMessage(
+            BTCPHeader(
+                id=self.stream_id,
+                syn=syn_number,
+                ack=ack_number,
+                raw_flags=0,
+                window_size=self.window_size,
+            ),
+            payload
         )
 
     def syn_message(
@@ -81,23 +85,15 @@ class MessageFactory(object):
         syn_number: int,
         ack_number: int,
     ) -> BTCPMessage:
-        header = self.header(syn_number, ack_number)
-        header.syn = True
-        return BTCPMessage(header, b"")
+        message = self.message(syn_number, ack_number)
+        message.header.syn = True
+        return message
 
     def ack_message(
         self,
         syn_number: int,
         ack_number: int,
     ) -> BTCPMessage:
-        header = self.header(syn_number, ack_number)
-        header.ack = True
-        return BTCPMessage(header, b"")
-
-    def message(
-        self,
-        syn_number: int,
-        ack_number: int,
-        payload: bytes = b"",
-    ) -> BTCPMessage:
-        return BTCPMessage(self.header(syn_number, ack_number), payload)
+        message = self.message(syn_number, ack_number)
+        message.header.ack = True
+        return message
