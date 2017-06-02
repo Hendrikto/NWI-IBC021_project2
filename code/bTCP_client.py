@@ -7,7 +7,6 @@ import sys
 
 from bTCP.exceptions import ChecksumMismatch
 from bTCP.message import BTCPMessage, MessageFactory
-from bTCP.header import BTCPHeader
 from bTCP.state_machine import State, StateMachine
 
 # Handle arguments
@@ -173,19 +172,10 @@ class FinSent(State):
 
 class FinReceived(State):
     def run(self):
-        finack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.finack_message(syn_number, expected_syn).to_bytes(),
+            destination_addr,
         )
-        finack_message.header.ack = True
-        finack_message.header.fin = True
-        sock.sendto(finack_message.to_bytes(), destination_addr)
         try:
             ack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
