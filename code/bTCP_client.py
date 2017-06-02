@@ -132,7 +132,7 @@ class Established(State):
                 message.header.ack_number = expected_syn
                 sock.sendto(message.to_bytes(), destination_addr)
                 messages[syn_nr] = (message, now)
-        if input_bytes:
+        if input_bytes or highest_ack < syn_number:
             return Client.established
         return Client.fin_sent
 
