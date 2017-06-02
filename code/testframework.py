@@ -1,3 +1,4 @@
+import os
 import sys
 import unittest
 
@@ -33,14 +34,16 @@ class TestbTCPFramework(unittest.TestCase):
     def setUp(self):
         """Prepare for testing"""
         # default netem rule (does nothing)
-        run_command(netem_add)
+        run_command_blocking(netem_add)
 
         # launch localhost server
+        self.server_process = run_command("python3 bTCP_server.py -o out.file")
 
     def tearDown(self):
         """Clean up after testing"""
         # clean the environment
-        run_command(netem_del)
+        run_command_blocking(netem_del)
+        os.remove("out.file")
 
         # close server
 
