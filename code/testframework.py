@@ -1,3 +1,4 @@
+import filecmp
 import os
 import sys
 import unittest
@@ -31,6 +32,8 @@ def run_command_blocking(command, cwd=None, shell=True):
 class TestbTCPFramework(unittest.TestCase):
     """Test cases for bTCP"""
 
+    input_file = "tmp.file"
+
     def setUp(self):
         """Prepare for testing"""
         # default netem rule (does nothing)
@@ -51,13 +54,8 @@ class TestbTCPFramework(unittest.TestCase):
         """reliability over an ideal framework"""
         # setup environment (nothing to set)
 
-        # launch localhost client connecting to server
-
-        # client sends content to server
-
-        # server receives content from client
-
-        # content received by server matches the content sent by client
+        run_command_blocking("python3 bTCP_client.py")
+        filecmp.cmp(TestbTCPFramework.input_file, "out.file")
 
     def test_flipping_network(self):
         """reliability over network with bit flips
