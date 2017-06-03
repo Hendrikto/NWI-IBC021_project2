@@ -88,6 +88,7 @@ class SynSent(State):
             factory.ack_message(syn_number, expected_syn).to_bytes(),
             destination_addr,
         )
+        print("Connection established")
         return Client.established
 
 
@@ -96,7 +97,6 @@ class Established(State):
         self.messages = {}
 
     def run(self):
-        print("Connection established")
         global expected_syn
         global input_bytes
         global syn_number
