@@ -137,7 +137,14 @@ class Established(State):
 
 
 class FinSent(State):
+    def __init__(self):
+        self.retries = 100
+
     def run(self):
+        if self.retries <= 0:
+            print("FinSent: retry limit reached", file=sys.stderr)
+            return Client.finished
+        self.retries -= 1
         global syn_number
         global expected_syn
         sock.sendto(
@@ -171,7 +178,14 @@ class FinSent(State):
 
 
 class FinReceived(State):
+    def __init__(self):
+        self.retries = 100
+
     def run(self):
+        if self.retries <= 0:
+            print("FinSent: retry limit reached", file=sys.stderr)
+            return Client.finished
+        self.retries -= 1
         sock.sendto(
             factory.finack_message(syn_number, expected_syn).to_bytes(),
             destination_addr,
