@@ -65,7 +65,6 @@ class Listen(State):
 
 class SynReceived(State):
     def run(self):
-        global expected_syn
         global syn_number
         synack_message = BTCPMessage(
             BTCPHeader(
