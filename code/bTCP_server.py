@@ -6,8 +6,7 @@ import sys
 import shutil
 
 from bTCP.exceptions import ChecksumMismatch
-from bTCP.message import BTCPMessage
-from bTCP.header import BTCPHeader
+from bTCP.message import BTCPMessage, MessageFactory
 from bTCP.state_machine import StateMachine, State
 
 # Handle arguments
@@ -36,6 +35,7 @@ expected_syn = 0
 syn_number = 0
 client_address = None
 stream_id = 0
+factory = None
 
 
 class Listen(State):
@@ -43,6 +43,7 @@ class Listen(State):
         sock.setblocking(True)
         global client_address
         global expected_syn
+        global factory
         global stream_id
         global syn_number
         syn_number = 100
@@ -60,25 +61,17 @@ class Listen(State):
             return Server.listen
         expected_syn = syn_message.header.syn_number + 1
         stream_id = syn_message.header.id
+        factory = MessageFactory(stream_id, args.window)
         return Server.syn_received
 
 
 class SynReceived(State):
     def run(self):
         global syn_number
-        synack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.synack_message(syn_number, expected_syn).to_bytes(),
+            client_address,
         )
-        synack_message.header.syn = True
-        synack_message.header.ack = True
-        sock.sendto(synack_message.to_bytes(), client_address)
         sock.settimeout(args.timeout / 1000)
         try:
             packet = BTCPMessage.from_bytes(sock.recv(1016))
@@ -120,7 +113,10 @@ class Established(State):
                 if shutil.disk_usage(".").free < len(self.output):
                     Server.fin_sent.retries = 10
                     return Server.fin_sent
-                self.send_ack()
+                sock.sendto(
+                    factory.ack_message(syn_number, expected_syn).to_bytes(),
+                    client_address,
+                )
             elif (
                 packet.header.fin and
                 packet.header.syn_number == expected_syn
@@ -143,21 +139,6 @@ class Established(State):
         elif packet.header.syn_number < expected_syn + args.window:
             self.window[packet.header.syn_number] = packet.payload
 
-    def send_ack(self):
-        global syn_number
-        ack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
-        )
-        ack_message.header.ack = True
-        sock.sendto(ack_message.to_bytes(), client_address)
-
 
 class FinSent(State):
     def run(self):
@@ -167,18 +148,10 @@ class FinSent(State):
         self.retries -= 1
         global expected_syn
         global syn_number
-        fin_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.fin_message(syn_number, expected_syn).to_bytes(),
+            client_address,
         )
-        fin_message.header.fin = True
-        sock.sendto(fin_message.to_bytes(), client_address)
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
@@ -196,18 +169,10 @@ class FinSent(State):
             return Server.fin_sent
         syn_number += 1
         expected_syn += 1
-        ack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.ack_message(syn_number, expected_syn).to_bytes(),
+            client_address
         )
-        ack_message.header.ack = True
-        sock.sendto(ack_message.to_bytes(), client_address)
         return Server.closed
 
 
@@ -217,19 +182,10 @@ class FinReceived(State):
             print("S FinReceived: timeout limit reached.", file=sys.stderr)
             return Server.closed
         self.retries -= 1
-        finack_message = BTCPMessage(
-            BTCPHeader(
-                id=stream_id,
-                syn=syn_number,
-                ack=expected_syn,
-                raw_flags=0,
-                window_size=args.window,
-            ),
-            b""
+        sock.sendto(
+            factory.finack_message(syn_number, expected_syn).to_bytes(),
+            client_address,
         )
-        finack_message.header.ack = True
-        finack_message.header.fin = True
-        sock.sendto(finack_message.to_bytes(), client_address)
         try:
             ack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
