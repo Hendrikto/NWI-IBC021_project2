@@ -133,4 +133,6 @@ if __name__ == "__main__":
     sys.argv[1:] = extra
 
     # Start test suite
-    unittest.main(verbosity=2)
+    unittest.main(testRunner=unittest.TextTestRunner(
+        stream=sys.stdout, verbosity=2,
+    ))
