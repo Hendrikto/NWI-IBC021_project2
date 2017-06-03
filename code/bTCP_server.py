@@ -52,17 +52,17 @@ class Listen(State):
             syn_message = BTCPMessage.from_bytes(data)
         except ChecksumMismatch:
             print("S Listen: checksum mismatch", file=sys.stderr)
-            return Server.listen
+            return self.state_machine.listen
         if not (
             syn_message.header.syn and
             syn_message.header.ack_number == 0
         ):
             print("S Listen: wrong message received", file=sys.stderr)
-            return Server.listen
+            return self.state_machine.listen
         expected_syn = syn_message.header.syn_number + 1
         stream_id = syn_message.header.id
         factory = MessageFactory(stream_id, args.window)
-        return Server.syn_received
+        return self.state_machine.syn_received
 
 
 class SynReceived(State):
@@ -77,23 +77,24 @@ class SynReceived(State):
             packet = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("S SynReceived: timed out", file=sys.stderr)
-            return Server.syn_received
+            return self.state_machine.syn_received
         except ChecksumMismatch:
             print("S SynReceived: checksum mismatch", file=sys.stderr)
-            return Server.syn_received
+            return self.state_machine.syn_received
         if not (
             packet.header.id == stream_id and
             packet.header.syn_number >= expected_syn
         ):
             print("S SynReceived: wrong message received", file=sys.stderr)
-            return Server.syn_received
+            return self.state_machine.syn_received
         syn_number += 1
         print("S Connection established")
-        return Server.established
+        return self.state_machine.established
 
 
 class Established(State):
-    def __init__(self):
+    def __init__(self, state_machine: StateMachine):
+        super().__init__(state_machine)
         self.output = bytes()
         self.window = {}
 
@@ -103,16 +104,16 @@ class Established(State):
             packet = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("S Established: timed out", file=sys.stderr)
-            return Server.established
+            return self.state_machine.established
         except ChecksumMismatch:
             print("S Established: checksum mismatch", file=sys.stderr)
-            return Server.established
+            return self.state_machine.established
         if packet.header.id != stream_id:
-            return Server.established
+            return self.state_machine.established
         if packet.header.no_flags:
             self.handle_data_packet(packet)
             if shutil.disk_usage(".").free < len(self.output):
-                return Server.fin_sent
+                return self.state_machine.fin_sent
             sock.sendto(
                 factory.ack_message(syn_number, expected_syn).to_bytes(),
                 client_address,
@@ -124,8 +125,8 @@ class Established(State):
             expected_syn += 1
             with open(args.output, "wb") as f:
                 f.write(self.output)
-            return Server.fin_received
-        return Server.established
+            return self.state_machine.fin_received
+        return self.state_machine.established
 
     def handle_data_packet(self, packet):
         global expected_syn
@@ -141,13 +142,14 @@ class Established(State):
 
 
 class FinSent(State):
-    def __init__(self):
+    def __init__(self, state_machine: StateMachine):
+        super().__init__(state_machine)
         self.retries = 10
 
     def run(self):
         if self.retries <= 0:
             print("S FinSent: retry limit reached", file=sys.stderr)
-            return Server.closed
+            return self.state_machine.closed
         self.retries -= 1
         global expected_syn
         global syn_number
@@ -159,34 +161,35 @@ class FinSent(State):
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("S FinSent: timed out", file=sys.stderr)
-            return Server.fin_sent
+            return self.state_machine.fin_sent
         except ChecksumMismatch:
             print("S FinSent: checksum mismatch", file=sys.stderr)
-            return Server.fin_sent
+            return self.state_machine.fin_sent
         if not (
             finack_message.header.fin and
             finack_message.header.ack and
             finack_message.header.id == stream_id
         ):
             print("S FinSent: wrong message received", file=sys.stderr)
-            return Server.fin_sent
+            return self.state_machine.fin_sent
         syn_number += 1
         expected_syn += 1
         sock.sendto(
             factory.ack_message(syn_number, expected_syn).to_bytes(),
             client_address
         )
-        return Server.closed
+        return self.state_machine.closed
 
 
 class FinReceived(State):
-    def __init__(self):
+    def __init__(self, state_machine: StateMachine):
+        super().__init__(state_machine)
         self.retries = 10
 
     def run(self):
         if self.retries <= 0:
             print("S FinReceived: timeout limit reached.", file=sys.stderr)
-            return Server.closed
+            return self.state_machine.closed
         self.retries -= 1
         sock.sendto(
             factory.finack_message(syn_number, expected_syn).to_bytes(),
@@ -196,18 +199,18 @@ class FinReceived(State):
             ack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("S FinReceived: timed out", file=sys.stderr)
-            return Server.fin_received
+            return self.state_machine.fin_received
         except ChecksumMismatch:
             print("S FinReceived: checksum mismatch", file=sys.stderr)
-            return Server.fin_received
+            return self.state_machine.fin_received
         if not (
             ack_message.header.ack and
             ack_message.header.id == stream_id and
             ack_message.header.syn_number == expected_syn
         ):
             print("S FinReceived: wrong message received", file=sys.stderr)
-            return Server.fin_received
-        return Server.closed
+            return self.state_machine.fin_received
+        return self.state_machine.closed
 
 
 class Closed(State):
@@ -215,20 +218,22 @@ class Closed(State):
 
 
 class Server(StateMachine):
-    listen = Listen()
-    syn_received = SynReceived()
-    established = Established()
-    fin_sent = FinSent()
-    fin_received = FinReceived()
-    closed = Closed()
+    def __init__(self):
+        self.listen = Listen(self)
+        self.syn_received = SynReceived(self)
+        self.established = Established(self)
+        self.fin_sent = FinSent(self)
+        self.fin_received = FinReceived(self)
+        self.closed = Closed(self)
+        self.state = self.listen
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((args.serverip, args.serverport))
-server = Server(Server.listen)
+server = Server()
 
 try:
-    while server.state is not Server.closed:
+    while server.state is not server.closed:
         server.run()
 finally:
     sock.close()

@@ -53,7 +53,7 @@ class Closed(State):
         syn_number = 0
         stream_id = randint(0, 2 ** 32)
         factory = MessageFactory(stream_id, args.window)
-        return Client.syn_sent
+        return self.state_machine.syn_sent
 
 
 class SynSent(State):
@@ -69,17 +69,17 @@ class SynSent(State):
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("SynSent: timed out", file=sys.stderr)
-            return Client.syn_sent
+            return self.state_machine.syn_sent
         except ChecksumMismatch:
             print("SynSent: checksum mismatch", file=sys.stderr)
-            return Client.syn_sent
+            return self.state_machine.syn_sent
         if not (
             synack_message.header.id == stream_id and
             synack_message.header.syn and
             synack_message.header.ack
         ):
             print("SynSent: wrong message received", file=sys.stderr)
-            return Client.syn_sent
+            return self.state_machine.syn_sent
         server_window = synack_message.header.window_size
         accept_ack(synack_message.header.ack_number)
         expected_syn = synack_message.header.syn_number + 1
@@ -89,11 +89,12 @@ class SynSent(State):
             destination_addr,
         )
         print("Connection established")
-        return Client.established
+        return self.state_machine.established
 
 
 class Established(State):
-    def __init__(self):
+    def __init__(self, state_machine: StateMachine):
+        super().__init__(state_machine)
         self.messages = {}
 
     def run(self):
@@ -123,7 +124,7 @@ class Established(State):
             accept_ack(message.header.ack_number)
             if message.header.fin:
                 expected_syn += 1
-                return Client.fin_received
+                return self.state_machine.fin_received
         for syn_nr in range(highest_ack, syn_number):
             message, timestamp = self.messages[syn_nr]
             now = datetime.now().timestamp()
@@ -132,18 +133,19 @@ class Established(State):
                 sock.sendto(message.to_bytes(), destination_addr)
                 self.messages[syn_nr] = (message, now)
         if input_bytes or highest_ack < syn_number:
-            return Client.established
-        return Client.fin_sent
+            return self.state_machine.established
+        return self.state_machine.fin_sent
 
 
 class FinSent(State):
-    def __init__(self):
+    def __init__(self, state_machine: StateMachine):
+        super().__init__(state_machine)
         self.retries = 100
 
     def run(self):
         if self.retries <= 0:
             print("FinSent: retry limit reached", file=sys.stderr)
-            return Client.finished
+            return self.state_machine.finished
         self.retries -= 1
         global syn_number
         global expected_syn
@@ -155,10 +157,10 @@ class FinSent(State):
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("FinSent: timed out", file=sys.stderr)
-            return Client.fin_sent
+            return self.state_machine.fin_sent
         except ChecksumMismatch:
             print("FinSent: checksum mismatch", file=sys.stderr)
-            return Client.fin_sent
+            return self.state_machine.fin_sent
         if not (
             finack_message.header.id == stream_id and
             finack_message.header.fin and
@@ -166,7 +168,7 @@ class FinSent(State):
             finack_message.header.syn_number == expected_syn
         ):
             print("FinSent: wrong message received", file=sys.stderr)
-            return Client.fin_sent
+            return self.state_machine.fin_sent
         accept_ack(finack_message.header.ack_number)
         syn_number += 1
         expected_syn += 1
@@ -174,17 +176,18 @@ class FinSent(State):
             factory.ack_message(syn_number, expected_syn).to_bytes(),
             destination_addr,
         )
-        return Client.finished
+        return self.state_machine.finished
 
 
 class FinReceived(State):
-    def __init__(self):
+    def __init__(self, state_machine: StateMachine):
+        super().__init__(state_machine)
         self.retries = 100
 
     def run(self):
         if self.retries <= 0:
             print("FinSent: retry limit reached", file=sys.stderr)
-            return Client.finished
+            return self.state_machine.finished
         self.retries -= 1
         sock.sendto(
             factory.finack_message(syn_number, expected_syn).to_bytes(),
@@ -194,18 +197,18 @@ class FinReceived(State):
             ack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("FinReceived: timed out", file=sys.stderr)
-            return Client.fin_received
+            return self.state_machine.fin_received
         except ChecksumMismatch:
             print("FinReceived: checksum mismatch", file=sys.stderr)
-            return Client.fin_received
+            return self.state_machine.fin_received
         if not (
             ack_message.header.ack and
             ack_message.header.id == stream_id and
             ack_message.header.syn_number == expected_syn
         ):
             print("FinReceived: wrong message received", file=sys.stderr)
-            return Client.fin_received
-        return Client.finished
+            return self.state_machine.fin_received
+        return self.state_machine.finished
 
 
 class Finished(State):
@@ -213,22 +216,24 @@ class Finished(State):
 
 
 class Client(StateMachine):
-    closed = Closed()
-    syn_sent = SynSent()
-    established = Established()
-    fin_sent = FinSent()
-    fin_received = FinReceived()
-    finished = Finished()
+    def __init__(self):
+        self.closed = Closed(self)
+        self.syn_sent = SynSent(self)
+        self.established = Established(self)
+        self.fin_sent = FinSent(self)
+        self.fin_received = FinReceived(self)
+        self.finished = Finished(self)
+        self.state = self.closed
 
 
 # UDP socket which will transport your bTCP packets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(args.timeout / 1000)
 
-client = Client(Client.closed)
+client = Client()
 
 try:
-    while client.state is not Client.finished:
+    while client.state is not client.finished:
         client.run()
 finally:
     sock.close()

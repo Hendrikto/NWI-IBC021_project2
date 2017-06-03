@@ -3,16 +3,16 @@
 
 
 class State(object):
+    def __init__(
+        self,
+        state_machine,
+    ):
+        self.state_machine = state_machine
+
     def run(self):
         raise NotImplementedError
 
 
 class StateMachine(object):
-    def __init__(
-        self,
-        initial_state: State,
-    ):
-        self.state = initial_state
-
     def run(self):
         self.state = self.state.run()
