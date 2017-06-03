@@ -37,8 +37,6 @@ syn_number = 0
 stream_id = 0
 highest_ack = 0
 server_window = 0
-timeouts = set()
-messages = {}
 factory = None
 
 
@@ -94,19 +92,20 @@ class SynSent(State):
 
 
 class Established(State):
+    def __init__(self):
+        self.messages = {}
+
     def run(self):
         print("Connection established")
         global expected_syn
         global input_bytes
         global syn_number
-        global timeouts
         while input_bytes and syn_number < highest_ack + server_window:
             data = input_bytes[:BTCPMessage.payload_size]
             input_bytes = input_bytes[BTCPMessage.payload_size:]
             message = factory.message(syn_number, expected_syn, data)
             sock.sendto(message.to_bytes(), destination_addr)
-            timeouts.add(syn_number)
-            messages[syn_number] = (message, datetime.now().timestamp())
+            self.messages[syn_number] = (message, datetime.now().timestamp())
             syn_number += 1
         while highest_ack < syn_number:
             try:
@@ -119,18 +118,19 @@ class Established(State):
                 continue
             if message.header.id != stream_id:
                 continue
-            timeouts -= {*range(highest_ack, message.header.ack_number)}
+            for syn_nr in range(highest_ack, message.header.ack_number):
+                del self.messages[syn_nr]
             accept_ack(message.header.ack_number)
             if message.header.fin:
                 expected_syn += 1
                 return Client.fin_received
-        for syn_nr in timeouts:
-            message, timestamp = messages[syn_nr]
+        for syn_nr in range(highest_ack, syn_number):
+            message, timestamp = self.messages[syn_nr]
             now = datetime.now().timestamp()
             if now - timestamp > args.timeout / 1000:
                 message.header.ack_number = expected_syn
                 sock.sendto(message.to_bytes(), destination_addr)
-                messages[syn_nr] = (message, now)
+                self.messages[syn_nr] = (message, now)
         if input_bytes or highest_ack < syn_number:
             return Client.established
         return Client.fin_sent
