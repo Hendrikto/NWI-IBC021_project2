@@ -88,42 +88,44 @@ class SynReceived(State):
             print("S SynReceived: wrong message received", file=sys.stderr)
             return Server.syn_received
         syn_number += 1
+        print("S Connection established")
         return Server.established
 
 
 class Established(State):
-    def run(self):
-        print("S Connection established")
-        global expected_syn
+    def __init__(self):
         self.output = bytes()
         self.window = {}
-        while True:
-            try:
-                packet = BTCPMessage.from_bytes(sock.recv(1016))
-            except socket.timeout:
-                print("S Established: timed out", file=sys.stderr)
-                continue
-            except ChecksumMismatch:
-                print("S Established: checksum mismatch", file=sys.stderr)
-                continue
-            if packet.header.id != stream_id:
-                continue
-            if packet.header.no_flags:
-                self.handle_data_packet(packet)
-                if shutil.disk_usage(".").free < len(self.output):
-                    return Server.fin_sent
-                sock.sendto(
-                    factory.ack_message(syn_number, expected_syn).to_bytes(),
-                    client_address,
-                )
-            elif (
-                packet.header.fin and
-                packet.header.syn_number == expected_syn
-            ):
-                expected_syn += 1
-                with open(args.output, "wb") as f:
-                    f.write(self.output)
-                return Server.fin_received
+
+    def run(self):
+        global expected_syn
+        try:
+            packet = BTCPMessage.from_bytes(sock.recv(1016))
+        except socket.timeout:
+            print("S Established: timed out", file=sys.stderr)
+            return Server.established
+        except ChecksumMismatch:
+            print("S Established: checksum mismatch", file=sys.stderr)
+            return Server.established
+        if packet.header.id != stream_id:
+            return Server.established
+        if packet.header.no_flags:
+            self.handle_data_packet(packet)
+            if shutil.disk_usage(".").free < len(self.output):
+                return Server.fin_sent
+            sock.sendto(
+                factory.ack_message(syn_number, expected_syn).to_bytes(),
+                client_address,
+            )
+        elif (
+            packet.header.fin and
+            packet.header.syn_number == expected_syn
+        ):
+            expected_syn += 1
+            with open(args.output, "wb") as f:
+                f.write(self.output)
+            return Server.fin_received
+        return Server.established
 
     def handle_data_packet(self, packet):
         global expected_syn
