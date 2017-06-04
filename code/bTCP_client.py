@@ -240,11 +240,11 @@ class Client(StateMachine):
 
         self.destination_address = (args.destination, args.port)
         self.expected_syn = 0
+        self.factory = MessageFactory(0, args.window)
         self.highest_ack = 0
         self.server_window = 0
         self.stream_id = 0
         self.syn_number = 0
-        self.factory = MessageFactory(self.stream_id, args.window)
 
     def accept_ack(self, ack: int):
         self.highest_ack = ack if ack > self.highest_ack else self.highest_ack
