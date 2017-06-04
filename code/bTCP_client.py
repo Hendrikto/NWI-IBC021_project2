@@ -80,18 +80,22 @@ class SynSent(State):
 
 
 class Established(State):
-    def __init__(self, state_machine: StateMachine):
+    def __init__(
+        self,
+        state_machine: StateMachine,
+        input_bytes: bytes,
+    ):
         super().__init__(state_machine)
+        self.input_bytes = input_bytes
         self.messages = {}
 
     def run(self):
-        global input_bytes
         while (
-            input_bytes and
+            self.input_bytes and
             self.state_machine.syn_number < self.state_machine.highest_ack + self.state_machine.server_window
         ):
-            data = input_bytes[:BTCPMessage.payload_size]
-            input_bytes = input_bytes[BTCPMessage.payload_size:]
+            data = self.input_bytes[:BTCPMessage.payload_size]
+            self.input_bytes = self.input_bytes[BTCPMessage.payload_size:]
             message = self.state_machine.factory.message(
                 self.state_machine.syn_number,
                 self.state_machine.expected_syn,
@@ -129,7 +133,7 @@ class Established(State):
                     self.state_machine.destination_address,
                 )
                 self.messages[syn_nr] = (message, now)
-        if input_bytes or self.state_machine.highest_ack < self.state_machine.syn_number:
+        if self.input_bytes or self.state_machine.highest_ack < self.state_machine.syn_number:
             return self.state_machine.established
         return self.state_machine.fin_sent
 
@@ -222,10 +226,13 @@ class Finished(State):
 
 
 class Client(StateMachine):
-    def __init__(self):
+    def __init__(
+        self,
+        input_bytes: bytes,
+    ):
         self.closed = Closed(self)
         self.syn_sent = SynSent(self)
-        self.established = Established(self)
+        self.established = Established(self, input_bytes)
         self.fin_sent = FinSent(self)
         self.fin_received = FinReceived(self)
         self.finished = Finished(self)
@@ -247,7 +254,7 @@ class Client(StateMachine):
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(args.timeout / 1000)
 
-client = Client()
+client = Client(input_bytes)
 
 try:
     while client.state is not client.finished:
