@@ -31,39 +31,23 @@ args = parser.parse_args()
 with open(args.input, "rb") as input:
     input_bytes = input.read()
 
-destination_addr = (args.destination, args.port)
-expected_syn = 0
-syn_number = 0
-stream_id = 0
-highest_ack = 0
-server_window = 0
-factory = None
-
-
-def accept_ack(ack: int):
-    global highest_ack
-    highest_ack = ack if ack > highest_ack else highest_ack
-
 
 class Closed(State):
     def run(self):
-        global factory
-        global stream_id
-        global syn_number
-        syn_number = 0
         stream_id = randint(0, 2 ** 32)
-        factory = MessageFactory(stream_id, args.window)
+        self.state_machine.stream_id = stream_id
+        self.state_machine.factory.stream_id = stream_id
         return self.state_machine.syn_sent
 
 
 class SynSent(State):
     def run(self):
-        global expected_syn
-        global server_window
-        global syn_number
         sock.sendto(
-            factory.syn_message(syn_number, expected_syn).to_bytes(),
-            destination_addr,
+            self.state_machine.factory.syn_message(
+                self.state_machine.syn_number,
+                self.state_machine.expected_syn,
+            ).to_bytes(),
+            self.state_machine.destination_address,
         )
         try:
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
@@ -74,19 +58,22 @@ class SynSent(State):
             print("SynSent: checksum mismatch", file=sys.stderr)
             return self.state_machine.syn_sent
         if not (
-            synack_message.header.id == stream_id and
+            synack_message.header.id == self.state_machine.stream_id and
             synack_message.header.syn and
             synack_message.header.ack
         ):
             print("SynSent: wrong message received", file=sys.stderr)
             return self.state_machine.syn_sent
-        server_window = synack_message.header.window_size
-        accept_ack(synack_message.header.ack_number)
-        expected_syn = synack_message.header.syn_number + 1
-        syn_number += 1
+        self.state_machine.server_window = synack_message.header.window_size
+        self.state_machine.accept_ack(synack_message.header.ack_number)
+        self.state_machine.expected_syn = synack_message.header.syn_number + 1
+        self.state_machine.syn_number += 1
         sock.sendto(
-            factory.ack_message(syn_number, expected_syn).to_bytes(),
-            destination_addr,
+            self.state_machine.factory.ack_message(
+                self.state_machine.syn_number,
+                self.state_machine.expected_syn,
+            ).to_bytes(),
+            self.state_machine.destination_address,
         )
         print("Connection established")
         return self.state_machine.established
@@ -98,17 +85,24 @@ class Established(State):
         self.messages = {}
 
     def run(self):
-        global expected_syn
         global input_bytes
-        global syn_number
-        while input_bytes and syn_number < highest_ack + server_window:
+        while (
+            input_bytes and
+            self.state_machine.syn_number < self.state_machine.highest_ack + self.state_machine.server_window
+        ):
             data = input_bytes[:BTCPMessage.payload_size]
             input_bytes = input_bytes[BTCPMessage.payload_size:]
-            message = factory.message(syn_number, expected_syn, data)
-            sock.sendto(message.to_bytes(), destination_addr)
-            self.messages[syn_number] = (message, datetime.now().timestamp())
-            syn_number += 1
-        while highest_ack < syn_number:
+            message = self.state_machine.factory.message(
+                self.state_machine.syn_number,
+                self.state_machine.expected_syn,
+                data,
+            )
+            sock.sendto(
+                message.to_bytes(), self.state_machine.destination_address
+            )
+            self.messages[self.state_machine.syn_number] = (message, datetime.now().timestamp())
+            self.state_machine.syn_number += 1
+        while self.state_machine.highest_ack < self.state_machine.syn_number:
             try:
                 message = BTCPMessage.from_bytes(sock.recv(1016))
             except socket.timeout:
@@ -117,22 +111,25 @@ class Established(State):
             except ChecksumMismatch:
                 print("Established: checksum mismatch", file=sys.stderr)
                 continue
-            if message.header.id != stream_id:
+            if message.header.id != self.state_machine.stream_id:
                 continue
-            for syn_nr in range(highest_ack, message.header.ack_number):
+            for syn_nr in range(self.state_machine.highest_ack, message.header.ack_number):
                 del self.messages[syn_nr]
-            accept_ack(message.header.ack_number)
+            self.state_machine.accept_ack(message.header.ack_number)
             if message.header.fin:
-                expected_syn += 1
+                self.state_machine.expected_syn += 1
                 return self.state_machine.fin_received
-        for syn_nr in range(highest_ack, syn_number):
+        for syn_nr in range(self.state_machine.highest_ack, self.state_machine.syn_number):
             message, timestamp = self.messages[syn_nr]
             now = datetime.now().timestamp()
             if now - timestamp > args.timeout / 1000:
-                message.header.ack_number = expected_syn
-                sock.sendto(message.to_bytes(), destination_addr)
+                message.header.ack_number = self.state_machine.expected_syn
+                sock.sendto(
+                    message.to_bytes(),
+                    self.state_machine.destination_address,
+                )
                 self.messages[syn_nr] = (message, now)
-        if input_bytes or highest_ack < syn_number:
+        if input_bytes or self.state_machine.highest_ack < self.state_machine.syn_number:
             return self.state_machine.established
         return self.state_machine.fin_sent
 
@@ -150,8 +147,11 @@ class FinSent(State):
         global syn_number
         global expected_syn
         sock.sendto(
-            factory.fin_message(syn_number, expected_syn).to_bytes(),
-            destination_addr,
+            self.state_machine.factory.fin_message(
+                self.state_machine.syn_number,
+                self.state_machine.expected_syn
+            ).to_bytes(),
+            self.state_machine.destination_address,
         )
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
@@ -162,19 +162,22 @@ class FinSent(State):
             print("FinSent: checksum mismatch", file=sys.stderr)
             return self.state_machine.fin_sent
         if not (
-            finack_message.header.id == stream_id and
+            finack_message.header.id == self.state_machine.stream_id and
             finack_message.header.fin and
             finack_message.header.ack and
-            finack_message.header.syn_number == expected_syn
+            finack_message.header.syn_number == self.state_machine.expected_syn
         ):
             print("FinSent: wrong message received", file=sys.stderr)
             return self.state_machine.fin_sent
-        accept_ack(finack_message.header.ack_number)
-        syn_number += 1
-        expected_syn += 1
+        self.state_machine.accept_ack(finack_message.header.ack_number)
+        self.state_machine.syn_number += 1
+        self.state_machine.expected_syn += 1
         sock.sendto(
-            factory.ack_message(syn_number, expected_syn).to_bytes(),
-            destination_addr,
+            self.state_machine.factory.ack_message(
+                self.state_machine.syn_number,
+                self.state_machine.expected_syn,
+            ).to_bytes(),
+            self.state_machine.destination_address,
         )
         return self.state_machine.finished
 
@@ -190,8 +193,11 @@ class FinReceived(State):
             return self.state_machine.finished
         self.retries -= 1
         sock.sendto(
-            factory.finack_message(syn_number, expected_syn).to_bytes(),
-            destination_addr,
+            self.state_machine.factory.finack_message(
+                self.state_machine.syn_number,
+                self.state_machine.expected_syn,
+            ).to_bytes(),
+            self.state_machine.destination_address,
         )
         try:
             ack_message = BTCPMessage.from_bytes(sock.recv(1016))
@@ -203,7 +209,7 @@ class FinReceived(State):
             return self.state_machine.fin_received
         if not (
             ack_message.header.ack and
-            ack_message.header.id == stream_id and
+            ack_message.header.id == self.state_machine.stream_id and
             ack_message.header.syn_number == expected_syn
         ):
             print("FinReceived: wrong message received", file=sys.stderr)
@@ -224,6 +230,17 @@ class Client(StateMachine):
         self.fin_received = FinReceived(self)
         self.finished = Finished(self)
         self.state = self.closed
+
+        self.destination_address = (args.destination, args.port)
+        self.expected_syn = 0
+        self.highest_ack = 0
+        self.server_window = 0
+        self.stream_id = 0
+        self.syn_number = 0
+        self.factory = MessageFactory(self.stream_id, args.window)
+
+    def accept_ack(self, ack: int):
+        self.highest_ack = ack if ack > self.highest_ack else self.highest_ack
 
 
 # UDP socket which will transport your bTCP packets
