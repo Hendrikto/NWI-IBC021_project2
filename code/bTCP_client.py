@@ -86,23 +86,20 @@ class Established(State):
         self.messages = {}
 
     def run(self):
+        sm = self.state_machine
         while (
             self.input_bytes and
-            self.state_machine.syn_number < self.state_machine.highest_ack + self.state_machine.server_window
+            sm.syn_number < sm.highest_ack + sm.server_window
         ):
             data = self.input_bytes[:BTCPMessage.payload_size]
             self.input_bytes = self.input_bytes[BTCPMessage.payload_size:]
-            message = self.state_machine.factory.message(
-                self.state_machine.syn_number,
-                self.state_machine.expected_syn,
-                data,
+            message = sm.factory.message(sm.syn_number, sm.expected_syn, data)
+            sock.sendto(message.to_bytes(), sm.destination_address)
+            self.messages[sm.syn_number] = (
+                message, datetime.now().timestamp(),
             )
-            sock.sendto(
-                message.to_bytes(), self.state_machine.destination_address
-            )
-            self.messages[self.state_machine.syn_number] = (message, datetime.now().timestamp())
-            self.state_machine.syn_number += 1
-        while self.state_machine.highest_ack < self.state_machine.syn_number:
+            sm.syn_number += 1
+        while sm.highest_ack < sm.syn_number:
             try:
                 message = BTCPMessage.from_bytes(sock.recv(1016))
             except socket.timeout:
@@ -111,27 +108,24 @@ class Established(State):
             except ChecksumMismatch:
                 print("Established: checksum mismatch", file=sys.stderr)
                 continue
-            if message.header.id != self.state_machine.stream_id:
+            if message.header.id != sm.stream_id:
                 continue
-            for syn_nr in range(self.state_machine.highest_ack, message.header.ack_number):
+            for syn_nr in range(sm.highest_ack, message.header.ack_number):
                 del self.messages[syn_nr]
-            self.state_machine.accept_ack(message.header.ack_number)
+            sm.accept_ack(message.header.ack_number)
             if message.header.fin:
-                self.state_machine.expected_syn += 1
-                return self.state_machine.fin_received
-        for syn_nr in range(self.state_machine.highest_ack, self.state_machine.syn_number):
+                sm.expected_syn += 1
+                return sm.fin_received
+        for syn_nr in range(sm.highest_ack, sm.syn_number):
             message, timestamp = self.messages[syn_nr]
             now = datetime.now().timestamp()
             if now - timestamp > args.timeout / 1000:
-                message.header.ack_number = self.state_machine.expected_syn
-                sock.sendto(
-                    message.to_bytes(),
-                    self.state_machine.destination_address,
-                )
+                message.header.ack_number = sm.expected_syn
+                sock.sendto(message.to_bytes(), sm.destination_address)
                 self.messages[syn_nr] = (message, now)
-        if self.input_bytes or self.state_machine.highest_ack < self.state_machine.syn_number:
-            return self.state_machine.established
-        return self.state_machine.fin_sent
+        if self.input_bytes or sm.highest_ack < sm.syn_number:
+            return sm.established
+        return sm.fin_sent
 
 
 class FinSent(State):
