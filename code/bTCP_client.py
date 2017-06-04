@@ -34,10 +34,11 @@ with open(args.input, "rb") as input:
 
 class Closed(State):
     def run(self):
+        sm = self.state_machine
         stream_id = randint(0, 2 ** 32)
-        self.state_machine.stream_id = stream_id
-        self.state_machine.factory.stream_id = stream_id
-        return self.state_machine.syn_sent
+        sm.stream_id = stream_id
+        sm.factory.stream_id = stream_id
+        return sm.syn_sent
 
 
 class SynSent(State):
