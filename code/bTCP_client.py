@@ -43,41 +43,36 @@ class Closed(State):
 
 class SynSent(State):
     def run(self):
+        sm = self.state_machine
         sock.sendto(
-            self.state_machine.factory.syn_message(
-                self.state_machine.syn_number,
-                self.state_machine.expected_syn,
-            ).to_bytes(),
-            self.state_machine.destination_address,
+            sm.factory.syn_message(sm.syn_number, sm.expected_syn).to_bytes(),
+            sm.destination_address,
         )
         try:
             synack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("SynSent: timed out", file=sys.stderr)
-            return self.state_machine.syn_sent
+            return sm.syn_sent
         except ChecksumMismatch:
             print("SynSent: checksum mismatch", file=sys.stderr)
-            return self.state_machine.syn_sent
+            return sm.syn_sent
         if not (
-            synack_message.header.id == self.state_machine.stream_id and
+            synack_message.header.id == sm.stream_id and
             synack_message.header.syn and
             synack_message.header.ack
         ):
             print("SynSent: wrong message received", file=sys.stderr)
-            return self.state_machine.syn_sent
-        self.state_machine.server_window = synack_message.header.window_size
-        self.state_machine.accept_ack(synack_message.header.ack_number)
-        self.state_machine.expected_syn = synack_message.header.syn_number + 1
-        self.state_machine.syn_number += 1
+            return sm.syn_sent
+        sm.server_window = synack_message.header.window_size
+        sm.accept_ack(synack_message.header.ack_number)
+        sm.expected_syn = synack_message.header.syn_number + 1
+        sm.syn_number += 1
         sock.sendto(
-            self.state_machine.factory.ack_message(
-                self.state_machine.syn_number,
-                self.state_machine.expected_syn,
-            ).to_bytes(),
-            self.state_machine.destination_address,
+            sm.factory.ack_message(sm.syn_number, sm.expected_syn).to_bytes(),
+            sm.destination_address,
         )
         print("Connection established")
-        return self.state_machine.established
+        return sm.established
 
 
 class Established(State):
