@@ -134,46 +134,41 @@ class FinSent(State):
         self.retries = 100
 
     def run(self):
+        sm = self.state_machine
         if self.retries <= 0:
             print("FinSent: retry limit reached", file=sys.stderr)
-            return self.state_machine.finished
+            return sm.finished
         self.retries -= 1
         global syn_number
         global expected_syn
         sock.sendto(
-            self.state_machine.factory.fin_message(
-                self.state_machine.syn_number,
-                self.state_machine.expected_syn
-            ).to_bytes(),
-            self.state_machine.destination_address,
+            sm.factory.fin_message(sm.syn_number, sm.expected_syn).to_bytes(),
+            sm.destination_address,
         )
         try:
             finack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("FinSent: timed out", file=sys.stderr)
-            return self.state_machine.fin_sent
+            return sm.fin_sent
         except ChecksumMismatch:
             print("FinSent: checksum mismatch", file=sys.stderr)
-            return self.state_machine.fin_sent
+            return sm.fin_sent
         if not (
-            finack_message.header.id == self.state_machine.stream_id and
+            finack_message.header.id == sm.stream_id and
             finack_message.header.fin and
             finack_message.header.ack and
-            finack_message.header.syn_number == self.state_machine.expected_syn
+            finack_message.header.syn_number == sm.expected_syn
         ):
             print("FinSent: wrong message received", file=sys.stderr)
-            return self.state_machine.fin_sent
-        self.state_machine.accept_ack(finack_message.header.ack_number)
-        self.state_machine.syn_number += 1
-        self.state_machine.expected_syn += 1
+            return sm.fin_sent
+        sm.accept_ack(finack_message.header.ack_number)
+        sm.syn_number += 1
+        sm.expected_syn += 1
         sock.sendto(
-            self.state_machine.factory.ack_message(
-                self.state_machine.syn_number,
-                self.state_machine.expected_syn,
-            ).to_bytes(),
-            self.state_machine.destination_address,
+            sm.factory.ack_message(sm.syn_number, sm.expected_syn).to_bytes(),
+            sm.destination_address,
         )
-        return self.state_machine.finished
+        return sm.finished
 
 
 class FinReceived(State):
