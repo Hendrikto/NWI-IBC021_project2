@@ -80,6 +80,7 @@ class Established(State):
         self,
         state_machine: StateMachine,
         input_bytes: bytes,
+        timeout: float,
     ):
         super().__init__(state_machine)
         self.input_bytes = input_bytes
@@ -215,21 +216,26 @@ class Client(StateMachine):
         self,
         sock: socket.socket,
         input_bytes: bytes,
+        destination: str,
+        destination_port: int,
+        window: int,
+        timeout: float,
     ):
         self.closed = Closed(self)
         self.syn_sent = SynSent(self)
-        self.established = Established(self, input_bytes)
+        self.established = Established(self, input_bytes, timeout)
         self.fin_sent = FinSent(self)
         self.fin_received = FinReceived(self)
         self.finished = Finished(self)
         self.state = self.closed
 
-        self.destination_address = (args.destination, args.port)
+        self.destination_address = (destination, destination_port)
         self.expected_syn = 0
-        self.factory = MessageFactory(0, args.window)
+        self.factory = MessageFactory(0, window)
         self.highest_ack = 0
         self.server_window = 0
         self.sock = sock
+        self.sock.settimeout(timeout)
         self.stream_id = 0
         self.syn_number = 0
 
@@ -239,9 +245,15 @@ class Client(StateMachine):
 
 # UDP socket which will transport your bTCP packets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.settimeout(args.timeout / 1000)
 
-client = Client(sock, input_bytes)
+client = Client(
+    sock=sock,
+    input_bytes=input_bytes,
+    destination=args.destination,
+    destination_port=args.port,
+    window=args.window,
+    timeout=args.timeout / 1000,
+)
 
 try:
     while client.state is not client.finished:
