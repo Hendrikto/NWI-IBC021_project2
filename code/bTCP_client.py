@@ -44,12 +44,12 @@ class Closed(State):
 class SynSent(State):
     def run(self):
         sm = self.state_machine
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.syn_message(sm.syn_number, sm.expected_syn).to_bytes(),
             sm.destination_address,
         )
         try:
-            synack_message = BTCPMessage.from_bytes(sock.recv(1016))
+            synack_message = BTCPMessage.from_bytes(sm.sock.recv(1016))
         except socket.timeout:
             print("SynSent: timed out", file=sys.stderr)
             return sm.syn_sent
@@ -67,7 +67,7 @@ class SynSent(State):
         sm.accept_ack(synack_message.header.ack_number)
         sm.expected_syn = synack_message.header.syn_number + 1
         sm.syn_number += 1
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.ack_message(sm.syn_number, sm.expected_syn).to_bytes(),
             sm.destination_address,
         )
@@ -94,14 +94,14 @@ class Established(State):
             data = self.input_bytes[:BTCPMessage.payload_size]
             self.input_bytes = self.input_bytes[BTCPMessage.payload_size:]
             message = sm.factory.message(sm.syn_number, sm.expected_syn, data)
-            sock.sendto(message.to_bytes(), sm.destination_address)
+            sm.sock.sendto(message.to_bytes(), sm.destination_address)
             self.messages[sm.syn_number] = (
                 message, datetime.now().timestamp(),
             )
             sm.syn_number += 1
         while sm.highest_ack < sm.syn_number:
             try:
-                message = BTCPMessage.from_bytes(sock.recv(1016))
+                message = BTCPMessage.from_bytes(sm.sock.recv(1016))
             except socket.timeout:
                 print("Established: timed out", file=sys.stderr)
                 break
@@ -121,7 +121,7 @@ class Established(State):
             now = datetime.now().timestamp()
             if now - timestamp > args.timeout / 1000:
                 message.header.ack_number = sm.expected_syn
-                sock.sendto(message.to_bytes(), sm.destination_address)
+                sm.sock.sendto(message.to_bytes(), sm.destination_address)
                 self.messages[syn_nr] = (message, now)
         if self.input_bytes or sm.highest_ack < sm.syn_number:
             return sm.established
@@ -141,12 +141,12 @@ class FinSent(State):
         self.retries -= 1
         global syn_number
         global expected_syn
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.fin_message(sm.syn_number, sm.expected_syn).to_bytes(),
             sm.destination_address,
         )
         try:
-            finack_message = BTCPMessage.from_bytes(sock.recv(1016))
+            finack_message = BTCPMessage.from_bytes(sm.sock.recv(1016))
         except socket.timeout:
             print("FinSent: timed out", file=sys.stderr)
             return sm.fin_sent
@@ -164,7 +164,7 @@ class FinSent(State):
         sm.accept_ack(finack_message.header.ack_number)
         sm.syn_number += 1
         sm.expected_syn += 1
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.ack_message(sm.syn_number, sm.expected_syn).to_bytes(),
             sm.destination_address,
         )
@@ -182,7 +182,7 @@ class FinReceived(State):
             print("FinSent: retry limit reached", file=sys.stderr)
             return sm.finished
         self.retries -= 1
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.finack_message(
                 sm.syn_number, sm.expected_syn
             ).to_bytes(),
@@ -213,6 +213,7 @@ class Finished(State):
 class Client(StateMachine):
     def __init__(
         self,
+        sock: socket.socket,
         input_bytes: bytes,
     ):
         self.closed = Closed(self)
@@ -228,6 +229,7 @@ class Client(StateMachine):
         self.factory = MessageFactory(0, args.window)
         self.highest_ack = 0
         self.server_window = 0
+        self.sock = sock
         self.stream_id = 0
         self.syn_number = 0
 
@@ -239,7 +241,7 @@ class Client(StateMachine):
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(args.timeout / 1000)
 
-client = Client(input_bytes)
+client = Client(sock, input_bytes)
 
 try:
     while client.state is not client.finished:
