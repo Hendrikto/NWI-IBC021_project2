@@ -31,8 +31,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 client = Client(
     sock=sock,
     input_bytes=input_bytes,
-    destination=args.destination,
-    destination_port=args.port,
+    destination_address=(args.destination, args.port),
     window=args.window,
     timeout=args.timeout / 1000,
 )

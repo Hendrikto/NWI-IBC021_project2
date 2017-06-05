@@ -5,6 +5,7 @@ from random import randint
 import socket
 
 import sys
+from typing import Tuple
 
 from bTCP.exceptions import ChecksumMismatch
 from bTCP.message import BTCPMessage, MessageFactory
@@ -196,8 +197,7 @@ class Client(StateMachine):
         self,
         sock: socket.socket,
         input_bytes: bytes,
-        destination: str,
-        destination_port: int,
+        destination_address: Tuple[str, int],
         window: int,
         timeout: float,
     ):
@@ -209,7 +209,7 @@ class Client(StateMachine):
         self.finished = Finished(self)
         self.state = self.closed
 
-        self.destination_address = (destination, destination_port)
+        self.destination_address = destination_address
         self.expected_syn = 0
         self.factory = MessageFactory(0, window)
         self.highest_ack = 0
