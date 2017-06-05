@@ -85,6 +85,7 @@ class Established(State):
         super().__init__(state_machine)
         self.input_bytes = input_bytes
         self.messages = {}
+        self.timeout = timeout
 
     def run(self):
         sm = self.state_machine
@@ -120,7 +121,7 @@ class Established(State):
         for syn_nr in range(sm.highest_ack, sm.syn_number):
             message, timestamp = self.messages[syn_nr]
             now = datetime.now().timestamp()
-            if now - timestamp > args.timeout / 1000:
+            if now - timestamp > self.timeout:
                 message.header.ack_number = sm.expected_syn
                 sm.sock.sendto(message.to_bytes(), sm.destination_address)
                 self.messages[syn_nr] = (message, now)
