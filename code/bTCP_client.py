@@ -177,33 +177,33 @@ class FinReceived(State):
         self.retries = 100
 
     def run(self):
+        sm = self.state_machine
         if self.retries <= 0:
             print("FinSent: retry limit reached", file=sys.stderr)
-            return self.state_machine.finished
+            return sm.finished
         self.retries -= 1
         sock.sendto(
-            self.state_machine.factory.finack_message(
-                self.state_machine.syn_number,
-                self.state_machine.expected_syn,
+            sm.factory.finack_message(
+                sm.syn_number, sm.expected_syn
             ).to_bytes(),
-            self.state_machine.destination_address,
+            sm.destination_address,
         )
         try:
             ack_message = BTCPMessage.from_bytes(sock.recv(1016))
         except socket.timeout:
             print("FinReceived: timed out", file=sys.stderr)
-            return self.state_machine.fin_received
+            return sm.fin_received
         except ChecksumMismatch:
             print("FinReceived: checksum mismatch", file=sys.stderr)
-            return self.state_machine.fin_received
+            return sm.fin_received
         if not (
             ack_message.header.ack and
-            ack_message.header.id == self.state_machine.stream_id and
+            ack_message.header.id == sm.stream_id and
             ack_message.header.syn_number == expected_syn
         ):
             print("FinReceived: wrong message received", file=sys.stderr)
-            return self.state_machine.fin_received
-        return self.state_machine.finished
+            return sm.fin_received
+        return sm.finished
 
 
 class Finished(State):
