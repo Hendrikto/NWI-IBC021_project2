@@ -2,7 +2,6 @@
 import argparse
 import socket
 
-import sys
 import shutil
 
 from bTCP.exceptions import ChecksumMismatch
