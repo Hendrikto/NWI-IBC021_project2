@@ -34,10 +34,10 @@ args = parser.parse_args()
 class Listen(State):
     def run(self):
         sm = self.state_machine
-        sock.setblocking(True)
+        sm.sock.setblocking(True)
         sm.syn_number = 100
         try:
-            data, sm.client_address = sock.recvfrom(1016)
+            data, sm.client_address = sm.sock.recvfrom(1016)
             syn_message = BTCPMessage.from_bytes(data)
         except ChecksumMismatch:
             self.log_error("checksum mismatch")
@@ -57,15 +57,15 @@ class Listen(State):
 class SynReceived(State):
     def run(self):
         sm = self.state_machine
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.synack_message(
                 sm.syn_number, sm.expected_syn
             ).to_bytes(),
             sm.client_address,
         )
-        sock.settimeout(sm.timeout)
+        sm.sock.settimeout(sm.timeout)
         try:
-            packet = BTCPMessage.from_bytes(sock.recv(1016))
+            packet = BTCPMessage.from_bytes(sm.sock.recv(1016))
         except socket.timeout:
             self.log_error("timed out")
             return sm.syn_received
@@ -92,7 +92,7 @@ class Established(State):
     def run(self):
         sm = self.state_machine
         try:
-            packet = BTCPMessage.from_bytes(sock.recv(1016))
+            packet = BTCPMessage.from_bytes(sm.sock.recv(1016))
         except socket.timeout:
             self.log_error("timed out")
             return sm.established
@@ -105,7 +105,7 @@ class Established(State):
             self.handle_data_packet(packet)
             if shutil.disk_usage(".").free < len(self.output):
                 return sm.fin_sent
-            sock.sendto(
+            sm.sock.sendto(
                 sm.factory.ack_message(
                     sm.syn_number, sm.expected_syn
                 ).to_bytes(),
@@ -145,14 +145,14 @@ class FinSent(State):
             self.log_error("retry limit reached")
             return sm.closed
         self.retries -= 1
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.fin_message(
                 sm.syn_number, sm.expected_syn
             ).to_bytes(),
             sm.client_address,
         )
         try:
-            finack_message = BTCPMessage.from_bytes(sock.recv(1016))
+            finack_message = BTCPMessage.from_bytes(sm.sock.recv(1016))
         except socket.timeout:
             self.log_error("timed out")
             return sm.fin_sent
@@ -168,7 +168,7 @@ class FinSent(State):
             return sm.fin_sent
         sm.syn_number += 1
         sm.expected_syn += 1
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.ack_message(
                 sm.syn_number, sm.expected_syn
             ).to_bytes(),
@@ -188,14 +188,14 @@ class FinReceived(State):
             self.log_error("timeout limit reached.")
             return sm.closed
         self.retries -= 1
-        sock.sendto(
+        sm.sock.sendto(
             sm.factory.finack_message(
                 sm.syn_number, sm.expected_syn
             ).to_bytes(),
             sm.client_address,
         )
         try:
-            ack_message = BTCPMessage.from_bytes(sock.recv(1016))
+            ack_message = BTCPMessage.from_bytes(sm.sock.recv(1016))
         except socket.timeout:
             self.log_error("timed out")
             return sm.fin_received
@@ -236,6 +236,7 @@ class Server(StateMachine):
         self.expected_syn = 0
         self.factory = MessageFactory(0, window_size)
         self.output_file = output_file
+        self.sock = sock
         self.stream_id = 0
         self.syn_number = 0
         self.timeout = timeout
