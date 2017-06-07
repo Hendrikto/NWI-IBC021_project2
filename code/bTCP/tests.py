@@ -34,9 +34,13 @@ class BTCPHeaderTest(unittest.TestCase):
         header.fin = True
         self.assertEqual(header._flags, 7)
         self.assertFalse(header.no_flags)
+        header.name = True
+        self.assertEqual(header._flags, 15)
+        self.assertFalse(header.no_flags)
         header.syn = False
         header.ack = False
         header.fin = False
+        header.name = False
         self.assertEqual(header._flags, 0)
         self.assertTrue(header.no_flags)
 
