@@ -132,7 +132,11 @@ class Server(StateMachine):
                     self.output += self.window[sm.expected_syn]
                     del self.window[sm.expected_syn]
                     sm.expected_syn += 1
-            elif packet.header.syn_number < sm.expected_syn + sm.window_size:
+            elif (
+                sm.expected_syn <
+                packet.header.syn_number <
+                sm.expected_syn + sm.window_size
+            ):
                 self.window[packet.header.syn_number] = packet.payload
 
     class FinSent(State):
