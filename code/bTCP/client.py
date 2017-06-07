@@ -34,7 +34,7 @@ class Client(StateMachine):
         self.factory = MessageFactory(0, window)
         self.output_file = output_file
         self.highest_ack = 0
-        self.output_file = output_file
+        self.output_file = bytes(output_file, "uft-8")
         self.server_window = 0
         self.sock = sock
         self.sock.settimeout(timeout)
@@ -57,7 +57,8 @@ class Client(StateMachine):
             sm = self.state_machine
             sm.sock.sendto(
                 sm.factory.syn_message(
-                    sm.syn_number, sm.expected_syn).to_bytes(),
+                    sm.syn_number, sm.expected_syn, sm.output_file
+                ).to_bytes(),
                 sm.destination_address,
             )
             try:

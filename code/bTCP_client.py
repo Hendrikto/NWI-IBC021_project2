@@ -21,6 +21,10 @@ parser.add_argument(
 parser.add_argument(
     "-p", "--port", help="Define destination port", type=int, default=9001
 )
+parser.add_argument(
+    "-o", "--outputfile", help="Define output file name used by the server",
+    type=str, default=""
+)
 args = parser.parse_args()
 
 with open(args.input, "rb") as input:
@@ -34,6 +38,7 @@ client = Client(
     destination_address=(args.destination, args.port),
     window=args.window,
     timeout=args.timeout / 1000,
+    output_file=args.outputfile,
 )
 
 try:
