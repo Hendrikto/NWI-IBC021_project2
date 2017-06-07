@@ -8,9 +8,10 @@ from pprint import pformat
 
 class BTCPHeader(object):
     format = struct.Struct("!LHHBBH")
-    syn_mask = 0b001
-    ack_mask = 0b010
-    fin_mask = 0b100
+    syn_mask = 0b0001
+    ack_mask = 0b0010
+    fin_mask = 0b0100
+    name_mask = 0b1000
 
     @classmethod
     def from_bytes(cls, data: bytes):
@@ -89,6 +90,17 @@ class BTCPHeader(object):
             self._flags |= BTCPHeader.fin_mask
         else:
             self._flags &= ~(BTCPHeader.fin_mask)
+
+    @property
+    def name(self) -> bool:
+        return bool(self._flags & BTCPHeader.name_mask)
+
+    @name.setter
+    def name(self, on: bool) -> None:
+        if on:
+            self._flags |= BTCPHeader.name_mask
+        else:
+            self._flags &= ~(BTCPHeader.name_mask)
 
     def to_bytes(self) -> bytes:
         return BTCPHeader.format.pack(
