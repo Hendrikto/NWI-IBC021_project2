@@ -34,6 +34,7 @@ class Client(StateMachine):
         self.factory = MessageFactory(0, window)
         self.output_file = output_file
         self.highest_ack = 0
+        self.output_file = output_file
         self.server_window = 0
         self.sock = sock
         self.sock.settimeout(timeout)
