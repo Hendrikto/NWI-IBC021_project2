@@ -56,8 +56,7 @@ class Server(StateMachine):
             sm.stream_id = syn_message.header.id
             sm.factory.stream_id = syn_message.header.id
             if (syn_message.header.name and
-                len(syn_message.payload) < 30 and
-                len(syn_message.payload) != 0
+                0 < len(syn_message.payload) < 30
             ):
                 sm.output_file = str(syn_message.payload, "utf-8")
             return sm.syn_received
