@@ -84,8 +84,9 @@ class MessageFactory(object):
         self,
         syn_number: int,
         ack_number: int,
+        payload: bytes=b"",
     ) -> BTCPMessage:
-        message = self.message(syn_number, ack_number)
+        message = self.message(syn_number, ack_number, payload)
         message.header.syn = True
         return message
 
