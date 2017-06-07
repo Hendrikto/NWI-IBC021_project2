@@ -19,6 +19,7 @@ class Client(StateMachine):
         destination_address: Tuple[str, int],
         window: int,
         timeout: float,
+        output_file: str,
     ):
         self.closed = Client.Closed(self)
         self.syn_sent = Client.SynSent(self)
@@ -32,6 +33,7 @@ class Client(StateMachine):
         self.expected_syn = 0
         self.factory = MessageFactory(0, window)
         self.highest_ack = 0
+        self.output_file = output_file
         self.server_window = 0
         self.sock = sock
         self.sock.settimeout(timeout)
