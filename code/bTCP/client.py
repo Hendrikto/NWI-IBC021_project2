@@ -47,6 +47,7 @@ class Client(StateMachine):
     class Closed(State):
         def run(self):
             sm = self.state_machine
+            sm.syn_number = randint(0, 2 ** 8)
             stream_id = randint(0, 2 ** 32)
             sm.stream_id = stream_id
             sm.factory.stream_id = stream_id

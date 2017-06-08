@@ -1,5 +1,6 @@
 # author: Hendrik Werner s4549775
 # author: Constantin Blach s4329872
+from random import randint
 import socket
 
 import shutil
@@ -40,7 +41,7 @@ class Server(StateMachine):
         def run(self):
             sm = self.state_machine
             sm.sock.setblocking(True)
-            sm.syn_number = 100
+            sm.syn_number = randint(0, 2 ** 8)
             try:
                 data, sm.client_address = sm.sock.recvfrom(1016)
                 syn_message = BTCPMessage.from_bytes(data)
