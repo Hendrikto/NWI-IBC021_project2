@@ -33,7 +33,7 @@ class Client(StateMachine):
         self.expected_syn = 0
         self.factory = MessageFactory(0, window)
         self.highest_ack = 0
-        self.output_file = bytes(output_file, "uft-8")
+        self.output_file = bytes(output_file, "utf-8")
         self.server_window = 0
         self.sock = sock
         self.sock.settimeout(timeout)
