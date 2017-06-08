@@ -32,7 +32,6 @@ class Client(StateMachine):
         self.destination_address = destination_address
         self.expected_syn = 0
         self.factory = MessageFactory(0, window)
-        self.output_file = output_file
         self.highest_ack = 0
         self.output_file = bytes(output_file, "uft-8")
         self.server_window = 0
