@@ -19,13 +19,14 @@ class Client(StateMachine):
         destination_address: Tuple[str, int],
         window: int,
         timeout: float,
+        retry_limit: int,
         output_file: str,
     ):
         self.closed = Client.Closed(self)
         self.syn_sent = Client.SynSent(self)
         self.established = Client.Established(self, input_bytes, timeout)
-        self.fin_sent = Client.FinSent(self)
-        self.fin_received = Client.FinReceived(self)
+        self.fin_sent = Client.FinSent(self, retry_limit)
+        self.fin_received = Client.FinReceived(self, retry_limit)
         self.finished = Client.Finished(self)
         self.state = self.closed
 
@@ -147,9 +148,13 @@ class Client(StateMachine):
             return sm.fin_sent
 
     class FinSent(State):
-        def __init__(self, state_machine: StateMachine):
+        def __init__(
+            self,
+            state_machine: StateMachine,
+            retry_limit: int,
+        ):
             super().__init__(state_machine)
-            self.retries = 100
+            self.retries = retry_limit
 
         def run(self):
             sm = self.state_machine
@@ -193,9 +198,13 @@ class Client(StateMachine):
             return sm.finished
 
     class FinReceived(State):
-        def __init__(self, state_machine: StateMachine):
+        def __init__(
+            self,
+            state_machine: StateMachine,
+            retry_limit: int,
+        ):
             super().__init__(state_machine)
-            self.retries = 100
+            self.retries = retry_limit
 
         def run(self):
             sm = self.state_machine

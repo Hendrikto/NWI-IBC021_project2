@@ -25,6 +25,10 @@ parser.add_argument(
     "-o", "--outputfile", help="Define output file name used by the server",
     type=str, default=""
 )
+parser.add_argument(
+    "-r", "--retry", help="Define the retry limit when closing the connection",
+    type=int, default=100
+)
 args = parser.parse_args()
 
 with open(args.input, "rb") as input:
@@ -38,6 +42,7 @@ client = Client(
     destination_address=(args.destination, args.port),
     window=args.window,
     timeout=args.timeout / 1000,
+    retry_limit=args.retry,
     output_file=args.outputfile,
 )
 
