@@ -24,6 +24,10 @@ parser.add_argument(
     "-p", "--serverport", help="Define server port", type=int,
     default=9001
 )
+parser.add_argument(
+    "-r", "--retry", help="Define the retry limit when closing the connection",
+    type=int, default=10
+)
 args = parser.parse_args()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -32,6 +36,7 @@ sock.bind((args.serverip, args.serverport))
 server = Server(
     sock=sock,
     timeout=args.timeout / 1000,
+    retry_limit=args.retry,
     window_size=args.window,
     output_file=args.output,
 )

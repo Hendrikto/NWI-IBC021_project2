@@ -14,14 +14,15 @@ class Server(StateMachine):
         self,
         sock: socket.socket,
         timeout: float,
+        retry_limit: int,
         window_size: int,
         output_file: str,
     ):
         self.listen = Server.Listen(self)
         self.syn_received = Server.SynReceived(self)
         self.established = Server.Established(self)
-        self.fin_sent = Server.FinSent(self)
-        self.fin_received = Server.FinReceived(self)
+        self.fin_sent = Server.FinSent(self, retry_limit)
+        self.fin_received = Server.FinReceived(self, retry_limit)
         self.closed = Server.Closed(self)
         self.state = self.listen
 
@@ -145,9 +146,13 @@ class Server(StateMachine):
                 self.window[packet.header.syn_number] = packet.payload
 
     class FinSent(State):
-        def __init__(self, state_machine: StateMachine):
+        def __init__(
+            self,
+            state_machine: StateMachine,
+            retry_limit: int,
+        ):
             super().__init__(state_machine)
-            self.retries = 10
+            self.retries = retry_limit
 
         def run(self):
             sm = self.state_machine
@@ -187,9 +192,13 @@ class Server(StateMachine):
             return sm.closed
 
     class FinReceived(State):
-        def __init__(self, state_machine: StateMachine):
+        def __init__(
+            self,
+            state_machine: StateMachine,
+            retry_limit: int,
+        ):
             super().__init__(state_machine)
-            self.retries = 10
+            self.retries = retry_limit
 
         def run(self):
             sm = self.state_machine
