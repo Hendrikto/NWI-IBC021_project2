@@ -24,7 +24,7 @@ class Server(StateMachine):
         self.established = Server.Established(self)
         self.fin_sent = Server.FinSent(self, retry_limit)
         self.fin_received = Server.FinReceived(self, retry_limit)
-        self.closed = Server.Closed(self)
+        self.finished = Server.Finished(self)
         self.state = self.listen
 
         self.client_address = None
@@ -159,7 +159,7 @@ class Server(StateMachine):
             sm = self.state_machine
             if self.retries <= 0:
                 self.log_error("retry limit reached")
-                return sm.closed
+                return sm.finished
             self.retries -= 1
             sm.sock.sendto(
                 sm.factory.fin_message(
@@ -190,7 +190,7 @@ class Server(StateMachine):
                 ).to_bytes(),
                 sm.client_address
             )
-            return sm.closed
+            return sm.finished
 
     class FinReceived(State):
         def __init__(
@@ -205,7 +205,7 @@ class Server(StateMachine):
             sm = self.state_machine
             if self.retries <= 0:
                 self.log_error("timeout limit reached.")
-                return sm.closed
+                return sm.finished
             self.retries -= 1
             sm.sock.sendto(
                 sm.factory.finack_message(
@@ -228,7 +228,7 @@ class Server(StateMachine):
             ):
                 self.log_error("wrong message received")
                 return sm.fin_received
-            return sm.closed
+            return sm.finished
 
-    class Closed(State):
+    class Finished(State):
         pass

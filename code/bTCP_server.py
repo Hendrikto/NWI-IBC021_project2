@@ -42,7 +42,7 @@ server = Server(
 )
 
 try:
-    while server.state is not server.closed:
+    while server.state is not server.finished:
         server.run()
 finally:
     sock.close()
