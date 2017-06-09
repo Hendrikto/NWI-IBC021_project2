@@ -137,7 +137,7 @@ class Client(StateMachine):
                 if message.header.fin:
                     sm.expected_syn += 1
                     return sm.fin_received
-            for syn_nr in range(sm.highest_ack, sm.syn_number):
+            for syn_nr in self.messages:
                 message, timestamp = self.messages[syn_nr]
                 now = datetime.now().timestamp()
                 if now - timestamp > self.timeout:
